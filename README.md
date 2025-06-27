@@ -2,9 +2,8 @@
 
 **SOG** (Secure Outbound Gateway) is a WordPress plugin that displays a customizable warning when visitors click on external links. It is designed for websites that prioritize security, transparency, and control over user behavior when leaving the site.
 
----
 
-## 🔐 Key Features
+## Key Features
 
 - Legal warning modal before leaving the site.
 - Customizable text with a professional design.
@@ -13,9 +12,8 @@
 - Visual style adaptable via CSS.
 - WordPress Multisite compatible (support in progress).
 
----
 
-## 🛠 Installation
+## Installation
 
 1. Clone or download the repository:
 
@@ -27,9 +25,8 @@
 
 3. Activate the plugin from the WordPress admin dashboard.
 
----
 
-## 💡 Future Roadmap
+## Roadmap
 
 - Admin panel with click statistics
 - Multi-language support (WPML, Polylang, browser detection)
@@ -38,16 +35,14 @@
 - Integration with Google Analytics or Matomo
 - Email/Slack alerts for critical clicks
 
----
 
-## 🪪 License
+## License
 
 This plugin is released under the [MIT License](./LICENSE).
 
----
 
-## 📬 Contact
+## Contact
 
 For feature requests, improvements, or bug reports, please open an issue in this repository.
 
-Contributions via forks or pull requests are welcome.
+agustins@root-view.com
