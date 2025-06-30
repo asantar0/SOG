@@ -12,6 +12,7 @@
 - Visual style adaptable via CSS.
 - WordPress Multisite compatible (support in progress).
 - Use of ipinfo.io to log Countries.
+- Localstore in order to avoid warning message to same site accepted.
 
 
 ## Installation

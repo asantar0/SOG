@@ -80,6 +80,7 @@ function sog_log_click() {
         }
     }
 
+    //$log_entry = "[$timestamp] IP: $ip_display - Country: $country - URL: $url\n";
     $log_entry = "[$timestamp] IP: $ip_display - Country: $country - Action: $action_type - URL: $url\n";
 
     $log_dir = WP_CONTENT_DIR . '/sog-logs';
