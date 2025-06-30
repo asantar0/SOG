@@ -80,7 +80,6 @@ function sog_log_click() {
         }
     }
 
-    //$log_entry = "[$timestamp] IP: $ip_display - Country: $country - URL: $url\n";
     $log_entry = "[$timestamp] IP: $ip_display - Country: $country - Action: $action_type - URL: $url\n";
 
     $log_dir = WP_CONTENT_DIR . '/sog-logs';
@@ -98,4 +97,9 @@ function sog_log_click() {
     chmod($log_file, 0600);
 
     wp_send_json_success('Click logged');
+}
+
+add_action('plugins_loaded', 'sog_load_textdomain');
+function sog_load_textdomain() {
+	    load_plugin_textdomain('sog', false, dirname(plugin_basename(__FILE__)) . '/languages/');
 }

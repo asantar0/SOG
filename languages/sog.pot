@@ -1,0 +1,21 @@
+msgid "Warning notice"
+msgstr ""
+
+msgid "You are leaving %s to access an external site."
+msgstr ""
+
+msgid "%s is not responsible for the content, accuracy, availability or security policies of the site that will be redirected. Access is achieved without exclusive liability."
+msgstr ""
+
+msgid "Cancel"
+msgstr ""
+
+msgid "Continue"
+msgstr ""
+
+msgid "Cancel and stay on this site"
+msgstr ""
+
+msgid "Continue and visit the external site"
+msgstr ""
+

@@ -10,7 +10,6 @@
 - Automatic logging of external link clicks.
 - Whitelist for trusted domains or internal subdomains.
 - Visual style adaptable via CSS.
-- WordPress Multisite compatible (support in progress).
 - Use of ipinfo.io to log Countries.
 - Localstore in order to avoid warning message to same site accepted.
 
@@ -36,6 +35,9 @@
 - Log export (CSV)
 - Integration with Google Analytics or Matomo
 - Email/Slack alerts for critical clicks
+- Delete accepted domains button
+- Tracking with Matomo/Google Analytics/Microsoft Clarity
+- Web admin
 
 
 ## License

@@ -18,7 +18,7 @@ document.addEventListener("DOMContentLoaded", function () {
         })
         .catch(error => {
             console.error("Error loading exceptions list:", error);
-            initModal([]); // continuar sin excepciones
+            initModal([]); 
         });
 
     function initModal(exceptions) {
