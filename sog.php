@@ -34,6 +34,7 @@ function sog_log_click() {
     }
 
     $url = esc_url_raw($_POST['url']);
+    $action_type = isset($_POST['action_type']) ? sanitize_text_field($_POST['action_type']) : 'unknown';
     $ip_real = $_SERVER['REMOTE_ADDR'];
     $timestamp = current_time('mysql');
 
@@ -46,11 +47,11 @@ function sog_log_click() {
         $visible = array_slice($blocks, 0, 2);
         $ip_display = implode(':', $visible) . ':****:****:****:****';
     } else {
-        $ip_display = 'Unknown';
+        $ip_display = 'unknown';
     }
 
     // IP Geolocation (ipinfo.io)
-    $token = '<token_id>';
+    $token = '17af7641fd3320';
     $country = 'Unknown';
     $geo_url = "https://ipinfo.io/{$ip_real}/json" . ($token ? "?token={$token}" : "");
     $response = wp_remote_get($geo_url);
@@ -65,7 +66,8 @@ function sog_log_click() {
         }
     }
 
-    $log_entry = "[$timestamp] IP: $ip_display - Country: $country - URL: $url\n";
+    //$log_entry = "[$timestamp] IP: $ip_display - Country: $country - URL: $url\n";
+    $log_entry = "[$timestamp] IP: $ip_display - Country: $country - Action: $action_type - URL: $url\n";
 
     $log_dir = WP_CONTENT_DIR . '/sog-logs';
     if (!file_exists($log_dir)) {

@@ -56,20 +56,25 @@ document.addEventListener("DOMContentLoaded", function () {
 
         let targetUrl = null;
 
-        function logClick(url) {
-            fetch(sog_ajax.ajax_url, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-		body: `action=sog_log_click&url=${encodeURIComponent(url)}&nonce=${sog_ajax.nonce}`
-            });
-        }
+	function logClick(url, actionType = 'click') {
+	        const data = new URLSearchParams();
+	        data.append('action', 'sog_log_click');
+	        data.append('url', url);
+	        data.append('action_type', actionType);
+	        data.append('nonce', sog_ajax.nonce);
+
+	        fetch(sog_ajax.ajax_url, {
+		            method: 'POST',
+		            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+		            body: data.toString()
+	        });
+	}
 
         document.querySelectorAll("a[href^='http']").forEach(link => {
             const url = new URL(link.href);
             if (url.host !== currentHost) {
                 link.addEventListener("click", function (e) {
                     e.preventDefault();
-                    logClick(link.href);
 
                     const isException = exceptions.some(exc =>
                         exc.startsWith("http") ? link.href.startsWith(exc) : url.host === exc
@@ -88,12 +93,14 @@ document.addEventListener("DOMContentLoaded", function () {
         });
 
         sogCancel.addEventListener("click", () => {
+            logClick(targetUrl, 'cancel');
             sogModal.style.display = "none";
             targetUrl = null;
         });
 
         sogContinue.addEventListener("click", () => {
             if (targetUrl) {
+		logClick(targetUrl, 'continue');
                 window.location.href = targetUrl;
             }
         });
