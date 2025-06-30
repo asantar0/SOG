@@ -1,0 +1,111 @@
+/*!
+ * Plugin Name: Secure Outbound Gateway (SOG)
+ * Description: Protect your visitors by displaying a customizable warning modal whenever they click external links
+ * Author: Agustin S
+ * Version: 1.0
+ */
+
+/* --- Base --- */
+.sog-modal-overlay {
+    display: none;
+    position: fixed;
+    z-index: 9999;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0, 15, 40, 0.85);
+    font-family: 'Segoe UI', Roboto, sans-serif;
+    justify-content: center;
+    align-items: center;
+}
+
+/* --- Box --- */
+.sog-modal-box {
+    background: #f7f9fb;
+    border-radius: 12px;
+    padding: 40px;
+    max-width: 540px;
+    width: 90%;
+    box-shadow: 0 12px 35px rgba(0, 0, 0, 0.3);
+    text-align: center;
+    border-top: 6px solid #002147;
+    animation: fadeIn 0.3s ease-out;
+    position: relative;
+}
+
+/* --- Headline --- */
+.sog-modal-box h2 {
+    margin: 0 0 20px;
+    font-size: 1.6em;
+    color: #002147;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.sog-modal-box h2 svg {
+    width: 24px;
+    height: 24px;
+    fill: #002147;
+}
+
+/* --- Warning text --- */
+.sog-modal-box p {
+    font-size: 1em;
+    color: #333;
+    line-height: 1.6;
+}
+
+/* --- URL to go --- */
+.sog-url {
+    word-break: break-word;
+    background: #e4eaf0;
+    padding: 12px 15px;
+    margin: 20px 0;
+    border-radius: 6px;
+    font-size: 0.95em;
+    color: #002147;
+    font-weight: 500;
+}
+
+/* --- Buttons --- */
+.sog-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 25px;
+    margin-top: 30px;
+}
+
+.sog-buttons button {
+    padding: 12px 24px;
+    border: none;
+    cursor: pointer;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 1em;
+    transition: background 0.3s ease;
+}
+
+#sog-cancel {
+    background: #cfd8e2;
+    color: #002147;
+}
+
+#sog-cancel:hover {
+    background: #b8c5d3;
+}
+
+#sog-continue {
+    background: #002147;
+    color: white;
+}
+
+#sog-continue:hover {
+    background: #00152e;
+}
+
+/* --- Fade in --- */
+@keyframes fadeIn {
+    from { opacity: 0; transform: scale(0.97); }
+    to { opacity: 1; transform: scale(1); }
+}
