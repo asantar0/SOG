@@ -11,6 +11,7 @@
 - Whitelist for trusted domains or internal subdomains.
 - Visual style adaptable via CSS.
 - WordPress Multisite compatible (support in progress).
+- Use of ipinfo.io to log Countries.
 
 
 ## Installation

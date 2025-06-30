@@ -14,7 +14,7 @@ function sog_enqueue_scripts() {
 
     wp_localize_script('sog-script', 'sog_ajax', [
         'ajax_url'   => admin_url('admin-ajax.php'),
-	'plugin_url' => $plugin_url,
+        'plugin_url' => $plugin_url,
 	'nonce'      => wp_create_nonce('sog_log_nonce')
     ]);
 }
@@ -25,7 +25,6 @@ add_action('wp_ajax_nopriv_sog_log_click', 'sog_log_click');
 add_action('wp_ajax_sog_log_click', 'sog_log_click');
 
 function sog_log_click() {
-    // Avoid abuses checking nonce
     if (
         !isset($_POST['url']) ||
         !isset($_POST['nonce']) ||
@@ -35,18 +34,39 @@ function sog_log_click() {
     }
 
     $url = esc_url_raw($_POST['url']);
-    $user_ip = $_SERVER['REMOTE_ADDR'];
+    $ip_real = $_SERVER['REMOTE_ADDR'];
     $timestamp = current_time('mysql');
 
-    // Privacy compliance - IP Address
-    $ip_parts = explode('.', $user_ip);
-    if (count($ip_parts) === 4) {
-        $user_ip = $ip_parts[0] . '.' . $ip_parts[1] . '.***.***';
+    // IP Hidden
+    if (filter_var($ip_real, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
+        $ip_parts = explode('.', $ip_real);
+        $ip_display = $ip_parts[0] . '.' . $ip_parts[1] . '.***.***';
+    } elseif (filter_var($ip_real, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6)) {
+        $blocks = explode(':', $ip_real);
+        $visible = array_slice($blocks, 0, 2);
+        $ip_display = implode(':', $visible) . ':****:****:****:****';
+    } else {
+        $ip_display = 'Unknown';
     }
 
-    $log_entry = "[$timestamp] IP: $user_ip URL: $url\n";
+    // IP Geolocation (ipinfo.io)
+    $token = '<token_id>';
+    $country = 'Unknown';
+    $geo_url = "https://ipinfo.io/{$ip_real}/json" . ($token ? "?token={$token}" : "");
+    $response = wp_remote_get($geo_url);
 
-    // Log dir outside website folder
+    if (
+        is_array($response) &&
+        isset($response['body']) &&
+        $body = json_decode($response['body'], true)
+    ) {
+        if (isset($body['country'])) {
+            $country = $body['country'];
+        }
+    }
+
+    $log_entry = "[$timestamp] IP: $ip_display - Country: $country - URL: $url\n";
+
     $log_dir = WP_CONTENT_DIR . '/sog-logs';
     if (!file_exists($log_dir)) {
         mkdir($log_dir, 0750, true);
@@ -54,7 +74,6 @@ function sog_log_click() {
 
     $log_file = $log_dir . '/sog-clicks.log';
 
-    // File size limit: 1
     if (file_exists($log_file) && filesize($log_file) > 1024 * 1024) {
         rename($log_file, $log_file . '.' . time() . '.bak');
     }
