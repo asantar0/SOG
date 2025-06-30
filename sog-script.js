@@ -60,7 +60,8 @@ document.addEventListener("DOMContentLoaded", function () {
             fetch(sog_ajax.ajax_url, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: `action=sog_log_click&url=${encodeURIComponent(url)}`
+                //body: `action=sog_log_click&url=${encodeURIComponent(url)}`
+		body: `action=sog_log_click&url=${encodeURIComponent(url)}&nonce=${sog_ajax.nonce}`    
             });
         }
 

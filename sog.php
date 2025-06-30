@@ -14,7 +14,53 @@ function sog_enqueue_scripts() {
 
     wp_localize_script('sog-script', 'sog_ajax', [
         'ajax_url'   => admin_url('admin-ajax.php'),
-        'plugin_url' => $plugin_url
+	'plugin_url' => $plugin_url,
+	'nonce'      => wp_create_nonce('sog_log_nonce')
     ]);
 }
 add_action('wp_enqueue_scripts', 'sog_enqueue_scripts');
+
+// Logs
+add_action('wp_ajax_nopriv_sog_log_click', 'sog_log_click');
+add_action('wp_ajax_sog_log_click', 'sog_log_click');
+
+function sog_log_click() {
+    // Avoid abuses checking nonce
+    if (
+        !isset($_POST['url']) ||
+        !isset($_POST['nonce']) ||
+        !wp_verify_nonce($_POST['nonce'], 'sog_log_nonce')
+    ) {
+        wp_send_json_error('Unauthorized');
+    }
+
+    $url = esc_url_raw($_POST['url']);
+    $user_ip = $_SERVER['REMOTE_ADDR'];
+    $timestamp = current_time('mysql');
+
+    // Privacy compliance - IP Address
+    $ip_parts = explode('.', $user_ip);
+    if (count($ip_parts) === 4) {
+        $user_ip = $ip_parts[0] . '.' . $ip_parts[1] . '.***.***';
+    }
+
+    $log_entry = "[$timestamp] IP: $user_ip URL: $url\n";
+
+    // Log dir outside website folder
+    $log_dir = WP_CONTENT_DIR . '/sog-logs';
+    if (!file_exists($log_dir)) {
+        mkdir($log_dir, 0750, true);
+    }
+
+    $log_file = $log_dir . '/sog-clicks.log';
+
+    // File size limit: 1
+    if (file_exists($log_file) && filesize($log_file) > 1024 * 1024) {
+        rename($log_file, $log_file . '.' . time() . '.bak');
+    }
+
+    file_put_contents($log_file, $log_entry, FILE_APPEND | LOCK_EX);
+    chmod($log_file, 0600);
+
+    wp_send_json_success('Click logged');
+}
