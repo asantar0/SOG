@@ -15,9 +15,23 @@ function sog_enqueue_scripts() {
     wp_localize_script('sog-script', 'sog_ajax', [
         'ajax_url'   => admin_url('admin-ajax.php'),
         'plugin_url' => $plugin_url,
-	'nonce'      => wp_create_nonce('sog_log_nonce')
+        'nonce'      => wp_create_nonce('sog_log_nonce')
+    ]);
+
+    // Translate
+    wp_localize_script('sog-script', 'sog_i18n', [
+	'modal_title'    => __('Warning notice', 'sog'),
+        'modal_line_1'   => __('You are leaving %s to access an external site.', 'sog'),
+        'modal_line_2'   => __('%s is not responsible for the content, accuracy, availability or security policies of the site that will be redirected. Access is achieved without exclusive liability.', 'sog'),
+        'cancel_label'   => __('Cancel', 'sog'),
+        'continue_label' => __('Continue', 'sog'),
+        'cancel_aria'    => __('Cancel and stay on this site', 'sog'),
+        'continue_aria'  => __('Continue and visit the external site', 'sog'),
+        'site_name'      => get_bloginfo('name'),
+        'site_domain'    => parse_url(home_url(), PHP_URL_HOST),
     ]);
 }
+
 add_action('wp_enqueue_scripts', 'sog_enqueue_scripts');
 
 // Logs
@@ -51,7 +65,7 @@ function sog_log_click() {
     }
 
     // IP Geolocation (ipinfo.io)
-    $token = '17af7641fd3320';
+    $token = 'api-token';
     $country = 'Unknown';
     $geo_url = "https://ipinfo.io/{$ip_real}/json" . ($token ? "?token={$token}" : "");
     $response = wp_remote_get($geo_url);
@@ -66,7 +80,6 @@ function sog_log_click() {
         }
     }
 
-    //$log_entry = "[$timestamp] IP: $ip_display - Country: $country - URL: $url\n";
     $log_entry = "[$timestamp] IP: $ip_display - Country: $country - Action: $action_type - URL: $url\n";
 
     $log_dir = WP_CONTENT_DIR . '/sog-logs';

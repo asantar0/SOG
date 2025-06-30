@@ -18,37 +18,40 @@ document.addEventListener("DOMContentLoaded", function () {
         })
         .catch(error => {
             console.error("Error loading exceptions list:", error);
-            initModal([]); // continuar sin excepciones
+            initModal([]);
         });
 
     function initModal(exceptions) {
         const modal = document.createElement("div");
-        modal.innerHTML = `
-          <div class="sog-modal-overlay" id="sogModal">
-            <div class="sog-modal-box">
-              <h2>
-                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10
-                           10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
-                </svg>
-                Warning notice
-              </h2>
-              <p>
-                You are leaving <strong>root-view.com</strong> to access an external site.
-              </p>
-              <p>
-                <strong>Root View</strong> is not responsible for the content, accuracy, availability or security policies of the site that will be redirected. Access is achieved without exclusive liability.
-              </p>
-              <p id="sog-link-display" class="sog-url"></p>
-              <div class="sog-buttons">
-                <button id="sog-cancel" aria-label="Cancel and stay on root-view.com">Cancel</button>
-                <button id="sog-continue" aria-label="Continue and visit the external site">Continue</button>
-              </div>
-            </div>
-          </div>
-        `;
         document.body.appendChild(modal);
-
+        modal.innerHTML = `
+      <div class="sog-modal-overlay" id="sogModal">
+        <div class="sog-modal-box">
+          <h2>
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10
+                       10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+            </svg>
+            ${sog_i18n.modal_title}
+          </h2>
+          <p>
+            ${sog_i18n.modal_line_1.replace('%s', sog_i18n.site_domain)}
+          </p>
+          <p>
+            ${sog_i18n.modal_line_2.replace('%s', sog_i18n.site_name)}
+          </p>
+          <p id="sog-link-display" class="sog-url"></p>
+          <div class="sog-buttons">
+            <button id="sog-cancel" aria-label="${sog_i18n.cancel_aria}">
+              ${sog_i18n.cancel_label}
+            </button>
+            <button id="sog-continue" aria-label="${sog_i18n.continue_aria}">
+              ${sog_i18n.continue_label}
+            </button>
+          </div>
+        </div>
+      </div>
+    `;	
         const sogModal = document.getElementById("sogModal");
         const sogLinkDisplay = document.getElementById("sog-link-display");
         const sogCancel = document.getElementById("sog-cancel");
