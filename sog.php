@@ -2,7 +2,7 @@
 /**
  * Plugin Name: SOG
  * Description: Protect your visitors by displaying a customizable warning modal whenever they click external links.
- * Version: 1.0
+ * Version: 1.0.1
  * Author: Agustin S
  */
 
