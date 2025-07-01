@@ -6,6 +6,7 @@
  * Author: Agustin S
  */
 
+// Main 
 function sog_enqueue_scripts() {
     $plugin_url = plugin_dir_url(__FILE__);
 
@@ -102,4 +103,126 @@ function sog_log_click() {
 add_action('plugins_loaded', 'sog_load_textdomain');
 function sog_load_textdomain() {
 	    load_plugin_textdomain('sog', false, dirname(plugin_basename(__FILE__)) . '/languages/');
+}
+
+//Admin Panel - GUI
+add_action('admin_menu', 'sog_add_admin_menu');
+
+function sog_add_admin_menu() {
+    add_options_page(
+        'Secure Outbound Gateway',
+        'SOG',
+        'manage_options',
+        'sog',
+        'sog_settings_page'
+    );
+}
+
+function sog_settings_page() {
+    $exceptions_path = plugin_dir_path(__FILE__) . 'exceptions.json';
+    $log_path = plugin_dir_path(__FILE__) . 'exceptions.log';
+
+    // Reading existing exceptions
+    $current_exceptions = [];
+    if (file_exists($exceptions_path)) {
+        $json = file_get_contents($exceptions_path);
+        $current_exceptions = json_decode($json, true);
+        if (!is_array($current_exceptions)) $current_exceptions = [];
+    }
+
+    //Cleaning auditlog
+    if (
+        isset($_POST['sog_clear_log']) &&
+        check_admin_referer('sog_clear_log')
+    ) {
+        if (file_exists($log_path)) {
+            if (is_writable($log_path)) {
+                unlink($log_path);
+                echo '<div class="notice notice-warning"><p>Audit log deleted.</p></div>';
+            } else {
+                echo '<div class="notice notice-error"><p>Cannot delete audit file: insufficient permissions</p></div>';
+            }
+        } else {
+            echo '<div class="notice notice-info"><p>There is no audit history to delete.</p></div>';
+        }
+    }
+
+    // Form process
+    if (
+        isset($_POST['sog_exceptions']) &&
+        check_admin_referer('sog_save_exceptions')
+    ) {
+        $raw = sanitize_textarea_field($_POST['sog_exceptions']);
+        $lines = array_filter(array_map('trim', explode("\n", $raw)));
+
+        $exceptions = [];
+        $invalid = [];
+
+        foreach ($lines as $line) {
+            if (filter_var($line, FILTER_VALIDATE_URL)) {
+                $exceptions[] = $line;
+            } elseif (preg_match('/^([a-z0-9-]+\.)+[a-z]{2,}$/i', $line)) {
+                $exceptions[] = $line;
+            } else {
+                $invalid[] = $line;
+            }
+        }
+
+        if (!empty($invalid)) {
+            echo '<div class="notice notice-error"><p><strong>Error:</strong> The following values are not valid URLs or domains:</p><ul>';
+            foreach ($invalid as $bad) {
+                echo '<li><code>' . esc_html($bad) . '</code></li>';
+            }
+            echo '</ul><p>Changes were not saved.</p></div>';
+        } else {
+            // Guardar exceptions.json
+            file_put_contents(
+                $exceptions_path,
+                json_encode($exceptions, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)
+            );
+
+            // Audit changes
+            $user = wp_get_current_user();
+            $ip = $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
+            $timestamp = current_time('mysql');
+            $log_entry = sprintf(
+                "[%s] Modified by: %s (%s) | IP: %s\n",
+                $timestamp,
+                $user->display_name,
+                $user->user_login,
+                $ip
+            );
+            foreach ($exceptions as $e) {
+                $log_entry .= "- {$e}\n";
+            }
+            $log_entry .= str_repeat("-", 50) . "\n";
+            file_put_contents($log_path, $log_entry, FILE_APPEND);
+
+            echo '<div class="notice notice-success"><p>Whitelist updated successfully.</p></div>';
+
+            $current_exceptions = $exceptions;
+        }
+    }
+
+    // HTML Form
+    ?>
+    <div class="wrap">
+        <h1>Secure Outbound Gateway (SOG)</h1>
+        <form method="post">
+            <?php wp_nonce_field('sog_save_exceptions'); ?>
+            <h2>URL Whitelist</h2>
+            <p>Enter one URL per line. Example: <code>example.com</code> or <code>https://site.com/path</code></p>
+            <textarea name="sog_exceptions" rows="10" cols="80" class="large-text code"><?php
+                echo esc_textarea(implode("\n", $current_exceptions));
+            ?></textarea>
+            <p><input type="submit" class="button button-primary" value="Save changes"></p>
+        </form>
+	<form method="post" style="margin-top: 20px;">
+    	    <?php wp_nonce_field('sog_clear_log'); ?>
+	    <input type="hidden" name="sog_clear_log" value="1">
+    	    <input type="submit" class="button button-secondary" value="Clean audit log"
+                 onclick="return confirm('Are you sure you want to delete the audit file? This action cannot be undone.');">
+	</form>
+    </div>
+    <?php
 }
