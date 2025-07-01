@@ -2,7 +2,7 @@
  * Plugin Name: Secure Outbound Gateway (SOG)
  * Description: JS logic for external link and exceptions.
  * Author: Agustin S
- * Version: 1.0.1
+ * Version: 1.0.2
  */
 
 document.addEventListener("DOMContentLoaded", function () {

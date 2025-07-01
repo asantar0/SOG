@@ -16,6 +16,8 @@
 
 ## Installation
 
+### From source
+
 1. Clone or download the repository:
 
    ```bash
@@ -25,6 +27,9 @@
 2. Upload the `sog` folder to your `/wp-content/plugins/` directory.
 
 3. Activate the plugin from the WordPress admin dashboard.
+
+### From release
+Go to release section in this proyect.
 
 
 ## Admin panel
@@ -46,7 +51,6 @@ From the WordPress backend you can:
 - Email/Slack alerts for critical clicks
 - Delete accepted domains button
 - Tracking with Matomo/Google Analytics/Microsoft Clarity
-- Web admin
 
 
 ## License
