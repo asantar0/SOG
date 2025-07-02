@@ -10,8 +10,8 @@
 function sog_enqueue_scripts() {
     $plugin_url = plugin_dir_url(__FILE__);
 
-    wp_enqueue_style('sog-style', $plugin_url . 'sog-style.css', [], time());
-    wp_enqueue_script('sog-script', $plugin_url . 'sog-script.js', [], time(), true);
+    wp_enqueue_style('sog-style', $plugin_url . 'css/sog-style.css', [], time());
+    wp_enqueue_script('sog-script', $plugin_url . 'js/sog-script.js', [], time(), true);
 
     wp_localize_script('sog-script', 'sog_ajax', [
         'ajax_url'   => admin_url('admin-ajax.php'),
@@ -175,7 +175,7 @@ function sog_settings_page() {
             }
             echo '</ul><p>Changes were not saved.</p></div>';
         } else {
-            // Guardar exceptions.json
+            // Saving exceptions.json
             file_put_contents(
                 $exceptions_path,
                 json_encode($exceptions, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)
