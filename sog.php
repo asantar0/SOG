@@ -119,8 +119,17 @@ function sog_add_admin_menu() {
 }
 
 function sog_settings_page() {
-    $exceptions_path = plugin_dir_path(__FILE__) . 'exceptions.json';
-    $log_path = plugin_dir_path(__FILE__) . 'exceptions.log';
+    //$exceptions_path = plugin_dir_path(__FILE__) . 'exceptions.json';
+    //$log_path = plugin_dir_path(__FILE__) . 'exceptions.log';
+
+    $upload_dir = wp_upload_dir();
+    $exceptions_path = trailingslashit($upload_dir['basedir']) . 'sog/exceptions.json';
+    $log_path = trailingslashit($upload_dir['basedir']) . 'sog/exceptions.log';
+
+    // Check if folder 'uploads/sog' exists
+    if (!file_exists(dirname($exceptions_path))) {
+        wp_mkdir_p(dirname($exceptions_path));
+    }
 
     // Reading existing exceptions
     $current_exceptions = [];
