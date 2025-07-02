@@ -279,4 +279,5 @@ function sog_settings_page() {
                    onclick="return confirm('Are you sure you want to delete the audit file? This action cannot be undone.');">
         </form>
     </div>
+    <?php
 }
