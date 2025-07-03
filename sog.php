@@ -267,7 +267,7 @@ function sog_settings_page() {
            if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
                $current_exceptions = $decoded;
            } elseif (strlen(trim($json)) > 0) {
-               echo '<div class="notice notice-error"><p><strong>Error:</strong>The <code>exceptions.json</code> file exists, but it's not a valid JSON file. It may be corrupted or have been manually edited incorrectly.</p></div>';
+               echo '<div class="notice notice-error"><p><strong>Error:</strong>The <code>exceptions.json</code> file exists, but it is not a valid JSON file. It may be corrupted or have been manually edited incorrectly.</p></div>';
            }
        }
    }
