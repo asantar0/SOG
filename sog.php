@@ -291,3 +291,35 @@ function sog_settings_page() {
     </div>
     <?php
 }
+
+// Go to settings SOG section from Wordpress plugin page
+add_filter('plugin_action_links_' . plugin_basename(__FILE__), 'sog_add_settings_link');
+
+function sog_add_settings_link($links) {
+    $settings_link = '<a href="' . admin_url('options-general.php?page=sog') . '">' . __('Settings', 'sog') . '</a>';
+    array_unshift($links, $settings_link);
+    return $links;
+}
+
+//Disable plugin SOG from Wordpress Plugin page
+// Cleanup
+register_deactivation_hook(__FILE__, 'sog_on_deactivation');
+
+function sog_on_deactivation() {
+    // Delete token
+    delete_option('sog_ipinfo_token');
+
+    // Delete files
+    $upload_dir = wp_upload_dir();
+    $sog_dir = trailingslashit($upload_dir['basedir']) . 'sog';
+
+    if (is_dir($sog_dir)) {
+        $files = glob($sog_dir . '/*');
+        foreach ($files as $file) {
+            if (is_file($file)) {
+                @unlink($file);
+            }
+        }
+        @rmdir($sog_dir); // Delete folder if it is empty
+    }
+}
