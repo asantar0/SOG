@@ -201,6 +201,15 @@ function sog_settings_page() {
                         echo '<li><code>' . esc_html($bad) . '</code></li>';
                     }
                     echo '</ul><p>Changes were not saved.</p></div>';
+
+		    //List reload from exceptions.json 
+    		    if (file_exists($exceptions_path)) {
+        		$json = file_get_contents($exceptions_path);
+        		$old_exceptions = json_decode($json, true);
+        		$current_exceptions = is_array($old_exceptions) ? $old_exceptions : [];
+    		    } else {
+        		$current_exceptions = [];
+		   }
                 } else {
                     // Read whitelist in order to compare
                     $old_exceptions = [];
@@ -250,13 +259,18 @@ function sog_settings_page() {
         }
     } else {
         $current_exceptions = [];
-        if (file_exists($exceptions_path)) {
-            $json = file_get_contents($exceptions_path);
-            $current_exceptions = json_decode($json, true);
-            if (!is_array($current_exceptions)) $current_exceptions = [];
-        }
-    }
 
+        if (file_exists($exceptions_path) && is_readable($exceptions_path)) {
+           $json = file_get_contents($exceptions_path);
+
+           $decoded = json_decode($json, true);
+           if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+               $current_exceptions = $decoded;
+           } elseif (strlen(trim($json)) > 0) {
+               echo '<div class="notice notice-error"><p><strong>Error:</strong> El archivo <code>exceptions.json</code> existe pero no es un JSON válido. Puede estar dañado o haber sido editado manualmente con errores.</p></div>';
+           }
+       }
+   }
     // HTML Form
     ?>
     <div class="wrap">
@@ -277,7 +291,8 @@ function sog_settings_page() {
             <h2>URL Whitelist</h2>
             <p>Enter one URL per line. Example: <code>example.com</code> or <code>https://site.com/path</code></p>
             <textarea name="sog_exceptions" rows="10" cols="80" class="large-text code"><?php
-                echo esc_textarea(implode("\n", $current_exceptions));
+                //echo esc_textarea(implode("\n", $current_exceptions));
+		echo esc_textarea(implode("\n", is_array($current_exceptions) ? $current_exceptions : []));
             ?></textarea>
 
             <p><input type="submit" class="button button-primary" value="Save changes"></p>
