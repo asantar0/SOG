@@ -38,6 +38,7 @@ From the WordPress backend you can:
 - Edit the whitelist of trusted domains.
 - Automatically validate that the entered URLs are correctly formatted.
 - Delete the audit log with a single click.
+- Set IP Info token.
 - Receive an automatic email notification each time the log is deleted. [PENDING]
 
 
