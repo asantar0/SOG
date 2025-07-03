@@ -150,21 +150,31 @@ function sog_settings_page() {
             check_admin_referer('sog_save_exceptions')
         ) {
             // Save token if it was set
-            if (isset($_POST['sog_token'])) {
-                $sanitized_token = sanitize_text_field($_POST['sog_token']);
-                update_option('sog_ipinfo_token', $sanitized_token);
+	    if (isset($_POST['sog_token'])) {
+    $sanitized_token = sanitize_text_field($_POST['sog_token']);
+    update_option('sog_ipinfo_token', $sanitized_token);
 
-                // Save token in uploads/sog/ folder
-                $token_file = trailingslashit($upload_dir['basedir']) . 'sog/ipinfo.token';
-                if (!file_exists(dirname($token_file))) {
-                    wp_mkdir_p(dirname($token_file));
-                }
-                file_put_contents($token_file, $sanitized_token);
-                chmod($token_file, 0600);
+    // Save token in uploads/sog/ folder
+    $token_file = trailingslashit($upload_dir['basedir']) . 'sog/ipinfo.token';
+    $success = false;
 
-                $current_token = $sanitized_token;
-            }
+    if (!file_exists(dirname($token_file))) {
+        wp_mkdir_p(dirname($token_file));
+    }
 
+    if (file_put_contents($token_file, $sanitized_token) !== false) {
+        chmod($token_file, 0600);
+        echo '<div class="notice notice-success"><p>IPInfo token saved successfully.</p></div>';
+        $success = true;
+    } else {
+        echo '<div class="notice notice-error"><p> Error: Could not write IPInfo token file. Check file permissions in <code>' . esc_html(dirname($token_file)) . '</code>.</p></div>';
+    }
+
+    if ($success) {
+        $current_token = $sanitized_token;
+    }
+}
+ 	
             // Process whitelist 
             if (isset($_POST['sog_exceptions'])) {
                 $raw = sanitize_textarea_field($_POST['sog_exceptions']);
