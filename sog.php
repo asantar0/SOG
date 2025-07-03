@@ -267,46 +267,12 @@ function sog_settings_page() {
            if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
                $current_exceptions = $decoded;
            } elseif (strlen(trim($json)) > 0) {
-               echo '<div class="notice notice-error"><p><strong>Error:</strong>The <code>exceptions.json</code> file exists, but it is not a valid JSON file. It may be corrupted or have been manually edited incorrectly.</p></div>';
-           }
+	       echo '<div class="notice notice-error"><p><strong>Error:</strong>The <code>exceptions.json</code> file exists, but it is not a valid JSON file. It may be corrupted or have been manually edited incorrectly.</p></div>';
+	   }
        }
    }
-    // HTML Form
-    ?>
-    <div class="wrap">
-        <h1>Secure Outbound Gateway (SOG)</h1>
-
-        <form method="post">
-            <?php wp_nonce_field('sog_save_exceptions'); ?>
-
-            <h2>IPInfo.io API Token</h2>
-            <p>
-                You can use your own token for geolocation data.
-                <a href="https://ipinfo.io/account/token" target="_blank" rel="noopener noreferrer">Get a free token here</a>.
-            </p>
-            <input type="text" name="sog_token" value="<?php echo esc_attr($current_token); ?>" class="regular-text" />
-
-            <hr>
-
-            <h2>URL Whitelist</h2>
-            <p>Enter one URL per line. Example: <code>example.com</code> or <code>https://site.com/path</code></p>
-            <textarea name="sog_exceptions" rows="10" cols="80" class="large-text code"><?php
-                //echo esc_textarea(implode("\n", $current_exceptions));
-		echo esc_textarea(implode("\n", is_array($current_exceptions) ? $current_exceptions : []));
-            ?></textarea>
-
-            <p><input type="submit" class="button button-primary" value="Save changes"></p>
-        </form>
-
-        <form method="post" style="margin-top: 20px;">
-            <?php wp_nonce_field('sog_clear_log'); ?>
-            <h2>Warning zone</h2>
-            <input type="hidden" name="sog_clear_log" value="1">
-            <input type="submit" class="button button-secondary" value="Clean audit log"
-                   onclick="return confirm('Are you sure you want to delete the audit file? This action cannot be undone.');">
-        </form>
-    </div>
-    <?php
+   // Incluir template
+   include plugin_dir_path(__FILE__) . 'inc/settings-page.php';
 }
 
 // Go to settings SOG section from Wordpress plugin page
