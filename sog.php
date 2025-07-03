@@ -271,7 +271,7 @@ function sog_settings_page() {
 	   }
        }
    }
-   // Incluir template
+   // Include template
    include plugin_dir_path(__FILE__) . 'inc/settings-page.php';
 }
 
