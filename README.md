@@ -64,3 +64,10 @@ This plugin is released under the [MIT License](./LICENSE).
 For feature requests, improvements, or bug reports, please open an issue in this repository.
 
 agustins@root-view.com
+
+## Donations
+
+If you find this plugin useful, you can buy me a coffee:
+
+[![Buy Me a Coffee](https://img.shields.io/badge/Coffee%20for%20me-%E2%98%95-lightgrey?logo=buy-me-a-coffee)](https://coff.ee/agustins)
+
