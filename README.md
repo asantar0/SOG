@@ -2,6 +2,18 @@
 
 **SOG** (Secure Outbound Gateway) is a WordPress plugin that displays a customizable warning when visitors click on external links. It is designed for websites that prioritize security, transparency, and control over user behavior when leaving the site.
 
+## Why?
+### Comply with regulations or good practices
+- Regulations such as GDPR, HIPAA, and even internal guidelines from many public and private institutions recommend warning users before redirecting them off-domain.
+- It can be part of a security or UX (user experience) audit.
+
+### Reduce legal and reputational risks
+If your site redirects to third-party services (links to banks, affiliates, etc.), notifying the user before leaving can protect you from claims if that third party has problems.
+
+### Improve user experience and build trust
+- When visitors see a warning like, "You are about to leave this site," they feel that you care about their security.
+- This increases the perception of the website or company's seriousness.
+
 
 ## Key Features
 
