@@ -3,7 +3,7 @@
  * Plugin Name: SOG
  * Plugin URI:
  * Description: Protect your visitors by displaying a customizable warning modal whenever they click external links.
- * Version:           1.0.2
+ * Version:           1.0.3
  * Requires at least: 6.8
  * Requires PHP:      8.2
  * Author: Agustin S
