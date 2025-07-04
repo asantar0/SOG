@@ -3,7 +3,7 @@
  * Plugin Name: SOG
  * Plugin URI:        
  * Description: Protect your visitors by displaying a customizable warning modal whenever they click external links.
- * Version:           1.0.3
+ * Version:           1.0.2
  * Requires at least: 6.8
  * Requires PHP:      8.2
  * Author: Agustin S
@@ -24,7 +24,8 @@ function sog_enqueue_scripts() {
     wp_localize_script('sog-script', 'sog_ajax', [
         'ajax_url'   => admin_url('admin-ajax.php'),
         'plugin_url' => $plugin_url,
-        'nonce'      => wp_create_nonce('sog_log_nonce')
+        'nonce'      => wp_create_nonce('sog_log_nonce'),
+        'whitelist_url' => content_url('uploads/sog/exceptions.json') //For excptions.json in js script
     ]);
 
     // Extra settings: rel options
@@ -256,7 +257,7 @@ function sog_settings_page() {
                     }
 
                     if ($exceptions !== $old_exceptions) {
-                        // Guardar whitelist nueva
+                        // Save new whitelist
                         if (!file_exists(dirname($exceptions_path))) {
                             wp_mkdir_p(dirname($exceptions_path));
                         }

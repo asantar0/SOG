@@ -16,7 +16,7 @@
 document.addEventListener("DOMContentLoaded", function () {
     const currentHost = window.location.host;
 
-    fetch(`${sog_ajax.plugin_url}exceptions.json`)
+    fetch(sog_ajax.whitelist_url)
         .then(response => {
             if (!response.ok) throw new Error("Failed to load exceptions.json");
             return response.json();
@@ -26,7 +26,7 @@ document.addEventListener("DOMContentLoaded", function () {
         })
         .catch(error => {
             console.error("Error loading exceptions list:", error);
-            initModal([]); 
+            initModal([]);
         });
 
     function initModal(exceptions) {
@@ -41,16 +41,12 @@ document.addEventListener("DOMContentLoaded", function () {
                 </svg>
                 ${sog_i18n.modal_title}
               </h2>
-              <p>
-                ${sog_i18n.modal_line_1.replace('%s', sog_i18n.site_domain)}
-              </p>
-              <p>
-                ${sog_i18n.modal_line_2.replace('%s', sog_i18n.site_name)}
-              </p>
+              <p>${sog_i18n.modal_line_1.replace('%s', sog_i18n.site_domain)}</p>
+              <p>${sog_i18n.modal_line_2.replace('%s', sog_i18n.site_name)}</p>
               <p id="sog-link-display" class="sog-url"></p>
               <div class="sog-buttons">
                 <button id="sog-cancel" aria-label="${sog_i18n.cancel_aria}">${sog_i18n.cancel_label}</button>
-		<button id="sog-continue" aria-label="${sog_i18n.continue_aria}">${sog_i18n.continue_label}</button>
+                <button id="sog-continue" aria-label="${sog_i18n.continue_aria}">${sog_i18n.continue_label}</button>
               </div>
             </div>
           </div>
@@ -64,7 +60,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
         let targetUrl = null;
 
-        // Logging AJAX
         function logClick(url, actionType = 'click') {
             const data = new URLSearchParams();
             data.append('action', 'sog_log_click');
@@ -79,7 +74,6 @@ document.addEventListener("DOMContentLoaded", function () {
             });
         }
 
-        // Cache for websites
         function getAcceptedDomains() {
             const raw = localStorage.getItem("sog_accepted_domains");
             return raw ? JSON.parse(raw) : [];
@@ -130,21 +124,39 @@ document.addEventListener("DOMContentLoaded", function () {
             targetUrl = null;
         });
 
-	sogContinue.addEventListener("click", (e) => {
-	    e.preventDefault();
-	    if (targetUrl) {
-		    const urlToOpen = targetUrl;
-	            const targetDomain = new URL(urlToOpen).host;
+        sogContinue.addEventListener("click", (e) => {
+            e.preventDefault();
+            if (targetUrl) {
+                const urlToOpen = targetUrl;
+                const targetDomain = new URL(urlToOpen).host;
 
-	            addAcceptedDomain(targetDomain);
-	            logClick(urlToOpen, 'continue');
+                addAcceptedDomain(targetDomain);
+                logClick(urlToOpen, 'continue');
 
-	            sogModal.style.display = "none";
-	            targetUrl = null;
+                sogModal.style.display = "none";
 
-		    //Open in new tab
-	            window.open(urlToOpen, '_blank', 'noopener,noreferrer');
-	    }
-	});
+                const tempLink = document.createElement("a");
+                tempLink.href = urlToOpen;
+                tempLink.target = "_blank";
+
+                let relValues = [];
+                if (sog_settings.rel_noopener === '1') relValues.push("noopener");
+                if (sog_settings.rel_noreferrer === '1') relValues.push("noreferrer");
+
+                if (relValues.length > 0) {
+                    tempLink.setAttribute("rel", relValues.join(" "));
+                }
+
+                // Debug URL - Browser console
+                //console.log("URL:", urlToOpen);
+        	//console.log("Rel used:", tempLink.getAttribute("rel"));
+
+                document.body.appendChild(tempLink);
+                tempLink.click();
+                document.body.removeChild(tempLink);
+
+                targetUrl = null;
+            }
+        });
     }
 });

@@ -37,10 +37,6 @@ The plugin offers an optional feature to automatically add `rel="noopener norefe
 - **Security**: Prevents reverse tabnabbing attacks.
 - **Privacy**: Stops leaking the source site through HTTP `Referer`.
 
-### How to enable
-- Go to **Settings → SOG**
-- Enable the option: _“Add `noopener noreferrer` to external links”_
-
 
 ## Installation
 
