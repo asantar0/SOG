@@ -2,7 +2,7 @@
  * Plugin Name: SOG
  * Plugin URI:
  * Description: Protect your visitors by displaying a customizable warning modal whenever they click external links.
- * Version:           1.0.2
+ * Version:           1.0.3
  * Requires at least: 6.8
  * Requires PHP:      8.2
  * Author: Agustin S
@@ -50,7 +50,7 @@ document.addEventListener("DOMContentLoaded", function () {
               <p id="sog-link-display" class="sog-url"></p>
               <div class="sog-buttons">
                 <button id="sog-cancel" aria-label="${sog_i18n.cancel_aria}">${sog_i18n.cancel_label}</button>
-                <button id="sog-continue" aria-label="${sog_i18n.continue_aria}">${sog_i18n.continue_label}</button>
+		<button id="sog-continue" aria-label="${sog_i18n.continue_aria}">${sog_i18n.continue_label}</button>
               </div>
             </div>
           </div>
@@ -130,13 +130,21 @@ document.addEventListener("DOMContentLoaded", function () {
             targetUrl = null;
         });
 
-        sogContinue.addEventListener("click", () => {
-            if (targetUrl) {
-                const targetDomain = new URL(targetUrl).host;
-                addAcceptedDomain(targetDomain);
-                logClick(targetUrl, 'continue');
-                window.location.href = targetUrl;
-            }
-        });
+	sogContinue.addEventListener("click", (e) => {
+	    e.preventDefault();
+	    if (targetUrl) {
+		    const urlToOpen = targetUrl;
+	            const targetDomain = new URL(urlToOpen).host;
+
+	            addAcceptedDomain(targetDomain);
+	            logClick(urlToOpen, 'continue');
+
+	            sogModal.style.display = "none";
+	            targetUrl = null;
+
+		    //Open in new tab
+	            window.open(urlToOpen, '_blank', 'noopener,noreferrer');
+	    }
+	});
     }
 });

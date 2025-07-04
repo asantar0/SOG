@@ -30,6 +30,9 @@ If your site redirects to third-party services (links to banks, affiliates, etc.
 
 The plugin offers an optional feature to automatically add `rel="noopener noreferrer"` to all external links.
 
+- noopener: Prevents the new tab from accessing window.opener, mitigating tabnabbing attacks.
+- noreferrer: In addition to blocking window.opener, this prevents the Referer (source URL) from being sent to the destination site.
+
 ### Why it matters
 - **Security**: Prevents reverse tabnabbing attacks.
 - **Privacy**: Stops leaking the source site through HTTP `Referer`.

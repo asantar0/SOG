@@ -3,7 +3,7 @@
  * Plugin Name: SOG
  * Plugin URI:
  * Description: Protect your visitors by displaying a customizable warning modal whenever they click external links.
- * Version:           1.0.2
+ * Version:           1.0.3
  * Requires at least: 6.8
  * Requires PHP:      8.2
  * Author: Agustin S
@@ -31,6 +31,24 @@
             <a href="https://ipinfo.io/account/token" target="_blank" rel="noopener noreferrer">Get a free token here</a>.
         </p>
         <input type="text" name="sog_token" value="<?php echo esc_attr($current_token); ?>" class="regular-text" />
+        <hr>
+
+	<h2>External Links Behavior</h2>
+	<p>Choose which <code>rel</code> attributes to apply to external links:</p>
+
+	<p>
+    	    <label>
+        	<input type="checkbox" name="sog_add_rel_noopener" value="1" <?php checked(get_option('sog_add_rel_noopener', '1'), '1'); ?> />
+        	Add <code>rel="noopener"</code>
+    	    </label>
+	</p>
+
+	<p>
+    	    <label>
+        	<input type="checkbox" name="sog_add_rel_noreferrer" value="1" <?php checked(get_option('sog_add_rel_noreferrer', '1'), '1'); ?> />
+        	Add <code>rel="noreferrer"</code>
+    	    </label>
+	</p>	
 
         <hr>
 

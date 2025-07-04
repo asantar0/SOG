@@ -3,7 +3,7 @@
  * Plugin Name: SOG
  * Plugin URI:        
  * Description: Protect your visitors by displaying a customizable warning modal whenever they click external links.
- * Version:           1.0.2
+ * Version:           1.0.3
  * Requires at least: 6.8
  * Requires PHP:      8.2
  * Author: Agustin S
@@ -25,6 +25,12 @@ function sog_enqueue_scripts() {
         'ajax_url'   => admin_url('admin-ajax.php'),
         'plugin_url' => $plugin_url,
         'nonce'      => wp_create_nonce('sog_log_nonce')
+    ]);
+
+    // Extra settings: rel options
+    wp_localize_script('sog-script', 'sog_settings', [
+        'rel_noopener'   => get_option('sog_add_rel_noopener', '1'),
+        'rel_noreferrer' => get_option('sog_add_rel_noreferrer', '1'),
     ]);
 
     // Translate
@@ -132,7 +138,7 @@ function sog_add_admin_menu() {
 function sog_settings_page() {
     $upload_dir = wp_upload_dir();
     $exceptions_path = trailingslashit($upload_dir['basedir']) . 'sog/exceptions.json';
-    $log_path = trailingslashit($upload_dir['basedir']) . 'sog/exceptions.log';
+    $log_path = trailingslashit($upload_dir['basedir']) . 'sog/audit.log';
 
     //ipinfo.io token variable
     $current_token = get_option('sog_ipinfo_token', '');
@@ -146,12 +152,12 @@ function sog_settings_page() {
             if (file_exists($log_path)) {
                 if (is_writable($log_path)) {
                     unlink($log_path);
-                    echo '<div class="notice notice-warning"><p>Audit log deleted.</p></div>';
+                    echo '<div class="notice notice-warning is-dismissible"><p>Audit log deleted.</p></div>';
                 } else {
-                    echo '<div class="notice notice-error"><p>Cannot delete audit file: insufficient permissions</p></div>';
+                    echo '<div class="notice notice-error is-dismissible"><p>Cannot delete audit file: insufficient permissions</p></div>';
                 }
             } else {
-                echo '<div class="notice notice-info"><p>There is no audit history to delete.</p></div>';
+                echo '<div class="notice notice-info is-dismissible"><p>There is no audit history to delete.</p></div>';
             }
         }
 
@@ -174,17 +180,39 @@ function sog_settings_page() {
 
     if (file_put_contents($token_file, $sanitized_token) !== false) {
         chmod($token_file, 0600);
-        echo '<div class="notice notice-success"><p>IPInfo token saved successfully.</p></div>';
+        echo '<div class="notice notice-success is-dismissible"><p>IPInfo token saved successfully.</p></div>';
         $success = true;
     } else {
-        echo '<div class="notice notice-error"><p> Error: Could not write IPInfo token file. Check file permissions in <code>' . esc_html(dirname($token_file)) . '</code>.</p></div>';
+        echo '<div class="notice notice-error is-dismissible"><p> Error: Could not write IPInfo token file. Check file permissions in <code>' . esc_html(dirname($token_file)) . '</code>.</p></div>';
     }
 
     if ($success) {
         $current_token = $sanitized_token;
     }
 }
- 	
+	    //Save rel options
+	    update_option('sog_add_rel_noopener', isset($_POST['sog_add_rel_noopener']) ? '1' : '0');
+	    update_option('sog_add_rel_noreferrer', isset($_POST['sog_add_rel_noreferrer']) ? '1' : '0'); 
+
+	    echo '<div class="notice notice-success is-dismissible"><p>Options for <code>rel="noopener"</code> and <code>rel="noreferrer"</code> were saved successfully.</p></div>';
+
+	    $user = wp_get_current_user();
+	    $ip = $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
+	    $timestamp = current_time('mysql');
+
+	    $log_rel_entry = sprintf(
+    		"[%s] Rel attribute options updated by: %s (%s) | IP: %s\n- noopener: %s\n- noreferrer: %s\n%s\n",
+    		$timestamp,
+    		$user->display_name,
+    		$user->user_login,
+    		$ip,
+    		get_option('sog_add_rel_noopener') === '1' ? 'enabled' : 'disabled',
+    		get_option('sog_add_rel_noreferrer') === '1' ? 'enabled' : 'disabled',
+    		str_repeat("-", 50)
+	    );
+
+	    file_put_contents($log_path, $log_rel_entry, FILE_APPEND);
+
             // Process whitelist 
             if (isset($_POST['sog_exceptions'])) {
                 $raw = sanitize_textarea_field($_POST['sog_exceptions']);
@@ -204,7 +232,7 @@ function sog_settings_page() {
                 }
 
                 if (!empty($invalid)) {
-                    echo '<div class="notice notice-error"><p><strong>Error:</strong> The following values are not valid URLs or domains:</p><ul>';
+                    echo '<div class="notice notice-error is-dismissible"><p><strong>Error:</strong> The following values are not valid URLs or domains:</p><ul>';
                     foreach ($invalid as $bad) {
                         echo '<li><code>' . esc_html($bad) . '</code></li>';
                     }
@@ -254,12 +282,12 @@ function sog_settings_page() {
                         $log_entry .= str_repeat("-", 50) . "\n";
                         file_put_contents($log_path, $log_entry, FILE_APPEND);
 
-                        echo '<div class="notice notice-success"><p>Whitelist updated successfully.</p></div>';
+                        echo '<div class="notice notice-success is-dismissible"><p>Whitelist updated successfully.</p></div>';
 
                         $current_exceptions = $exceptions;
                     } else {
                         // No changes
-                        echo '<div class="notice notice-info"><p>No changes detected in whitelist.</p></div>';
+                        echo '<div class="notice notice-info is-dismissible"><p>No changes detected in whitelist.</p></div>';
                         $current_exceptions = $exceptions;
                     }
                 }
@@ -275,7 +303,7 @@ function sog_settings_page() {
            if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
                $current_exceptions = $decoded;
            } elseif (strlen(trim($json)) > 0) {
-	       echo '<div class="notice notice-error"><p><strong>Error:</strong>The <code>exceptions.json</code> file exists, but it is not a valid JSON file. It may be corrupted or have been manually edited incorrectly.</p></div>';
+	       echo '<div class="notice notice-error is-dismissible"><p><strong>Error:</strong>The <code>exceptions.json</code> file exists, but it is not a valid JSON file. It may be corrupted or have been manually edited incorrectly.</p></div>';
 	   }
        }
    }
@@ -300,6 +328,10 @@ function sog_on_deactivation() {
     // Delete token
     delete_option('sog_ipinfo_token');
 
+    //Delete rel options
+    delete_option('sog_add_rel_noopener');
+    delete_option('sog_add_rel_noreferrer');
+
     // Delete files
     $upload_dir = wp_upload_dir();
     $sog_dir = trailingslashit($upload_dir['basedir']) . 'sog';
@@ -314,3 +346,8 @@ function sog_on_deactivation() {
         @rmdir($sog_dir); // Delete folder if it is empty
     }
 }
+
+//Dismissible messages
+add_action('admin_enqueue_scripts', function() {
+    wp_enqueue_script('wp-dismiss-notice');
+});
