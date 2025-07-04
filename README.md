@@ -26,6 +26,19 @@ If your site redirects to third-party services (links to banks, affiliates, etc.
 - Localstore in order to avoid warning message to same site accepted.
 
 
+## External Link Security (`rel="noopener noreferrer"`)
+
+The plugin offers an optional feature to automatically add `rel="noopener noreferrer"` to all external links.
+
+### Why it matters
+- **Security**: Prevents reverse tabnabbing attacks.
+- **Privacy**: Stops leaking the source site through HTTP `Referer`.
+
+### How to enable
+- Go to **Settings → SOG**
+- Enable the option: _“Add `noopener noreferrer` to external links”_
+
+
 ## Installation
 
 ### From source
