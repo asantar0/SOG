@@ -308,6 +308,12 @@ function sog_settings_page() {
 	   }
        }
    }
+
+   // Ensure $current_exceptions is always an array
+   if (!is_array($current_exceptions)) {
+        $current_exceptions = [];
+   }
+
    // Include template
    include plugin_dir_path(__FILE__) . 'inc/settings-page.php';
 }

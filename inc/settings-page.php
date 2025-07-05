@@ -56,7 +56,7 @@
         <h2>URL Whitelist</h2>
         <p>Enter one URL per line. Example: <code>example.com</code> or <code>https://site.com/path</code></p>
         <textarea name="sog_exceptions" rows="10" cols="80" class="large-text code"><?php
-            echo esc_textarea(implode("\n", $current_exceptions));
+	    echo esc_textarea(implode("\n", is_array($current_exceptions) ? $current_exceptions : []));
         ?></textarea>
 
         <p><input type="submit" class="button button-primary" value="Save changes"></p>
