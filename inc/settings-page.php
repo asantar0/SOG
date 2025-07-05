@@ -61,12 +61,15 @@
         <p><input type="submit" class="button button-primary" value="Save changes"></p>
     </form>
 
-    <form method="post" style="margin-top: 20px;">
+    <div style="background-color: #ffe5e5; padding: 20px; border-left: 4px solid #cc0000; margin-top: 30px;">
+    <h2 style="color: #cc0000; margin-top: 0;">Warning Zone</h2>
+    <p>This action will permanently delete the audit log. This cannot be undone.</p>
+
+    <form method="post">
         <?php wp_nonce_field('sog_clear_log'); ?>
-        <h2>Warning zone</h2>
         <input type="hidden" name="sog_clear_log" value="1">
         <input type="submit" class="button button-secondary" value="Clean audit log"
                onclick="return confirm('Are you sure you want to delete the audit file? This action cannot be undone.');">
     </form>
+    </div>
 </div>
-
