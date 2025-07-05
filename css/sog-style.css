@@ -117,3 +117,25 @@
     from { opacity: 0; transform: scale(0.97); }
     to { opacity: 1; transform: scale(1); }
 }
+
+/* --- Admin Warning Zone --- */
+.sog-warning-zone {
+    background-color: #ffe5e5;
+    border-left: 4px solid #cc0000;
+    padding: 20px;
+    margin-top: 30px;
+    border-radius: 6px;
+}
+
+.sog-warning-zone h2 {
+    color: #cc0000;
+    margin-top: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.sog-warning-zone p {
+    margin-bottom: 15px;
+    color: #333;
+}

@@ -352,3 +352,16 @@ function sog_on_deactivation() {
 add_action('admin_enqueue_scripts', function() {
     wp_enqueue_script('wp-dismiss-notice');
 });
+
+//CSS for inc/settings-page.php
+add_action('admin_enqueue_scripts', function($hook) {
+    if ($hook === 'settings_page_sog') {
+        wp_enqueue_style(
+            'sog-admin-style',
+            plugin_dir_url(__FILE__) . 'css/sog-style.css',
+            [],
+            filemtime(plugin_dir_path(__FILE__) . 'css/sog-style.css')
+        );
+    }
+});
+
