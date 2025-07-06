@@ -32,34 +32,56 @@
             <a href="https://ipinfo.io/account/token" target="_blank" rel="noopener noreferrer">Get a free token here</a>.
         </p>
         <input type="text" name="sog_token" value="<?php echo esc_attr($current_token); ?>" class="regular-text" />
+
         <hr>
 
-	<h2>External Links Behavior</h2>
-	<p>Choose which <code>rel</code> attributes to apply to external links:</p>
+        <h2>External Links Behavior</h2>
+        <p>Choose which <code>rel</code> attributes to apply to external links:</p>
 
-	<p>
-    	    <label>
-        	<input type="checkbox" name="sog_add_rel_noopener" value="1" <?php checked(get_option('sog_add_rel_noopener', '1'), '1'); ?> />
-        	Add <code>rel="noopener"</code>
-    	    </label>
-	</p>
+        <p>
+            <label>
+                <input type="checkbox" name="sog_add_rel_noopener" value="1" <?php checked(get_option('sog_add_rel_noopener', '1'), '1'); ?> />
+                Add <code>rel="noopener"</code>
+            </label>
+        </p>
 
-	<p>
-    	    <label>
-        	<input type="checkbox" name="sog_add_rel_noreferrer" value="1" <?php checked(get_option('sog_add_rel_noreferrer', '1'), '1'); ?> />
-        	Add <code>rel="noreferrer"</code>
-    	    </label>
-	</p>	
+        <p>
+            <label>
+                <input type="checkbox" name="sog_add_rel_noreferrer" value="1" <?php checked(get_option('sog_add_rel_noreferrer', '1'), '1'); ?> />
+                Add <code>rel="noreferrer"</code>
+            </label>
+        </p>
 
         <hr>
 
         <h2>URL Whitelist</h2>
         <p>Enter one URL per line. Example: <code>example.com</code> or <code>https://site.com/path</code></p>
         <textarea name="sog_exceptions" rows="10" cols="80" class="large-text code"><?php
-	    echo esc_textarea(implode("\n", is_array($current_exceptions) ? $current_exceptions : []));
+            echo esc_textarea(implode("\n", is_array($current_exceptions) ? $current_exceptions : []));
         ?></textarea>
 
-        <p><input type="submit" class="button button-primary" value="Save changes"></p>
+        <hr>
+
+        <h2>Modal Appearance</h2>
+
+        <p>
+            <label for="sog_modal_title">Modal Title:</label><br>
+            <input type="text" name="sog_modal_title" id="sog_modal_title" value="<?php echo esc_attr(get_option('sog_modal_title', 'Warning notice')); ?>" class="regular-text" />
+        </p>
+
+        <p>
+            <label for="sog_continue_color">Continue Button Color:</label><br>
+            <input type="color" name="sog_continue_color" id="sog_continue_color" value="<?php echo esc_attr(get_option('sog_continue_color', '#28a745')); ?>">
+        </p>
+
+        <p>
+            <label for="sog_cancel_color">Cancel Button Color:</label><br>
+            <input type="color" name="sog_cancel_color" id="sog_cancel_color" value="<?php echo esc_attr(get_option('sog_cancel_color', '#dc3545')); ?>">
+        </p>
+
+        <p>
+            <input type="submit" class="button button-primary" value="Save changes">
+        </p>
     </form>
 
     <div class="sog-warning-zone">
@@ -74,3 +96,4 @@
         </form>
     </div>
 </div>
+

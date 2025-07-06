@@ -14,29 +14,39 @@
  * Domain Path:       /languages
  */
 
-// Main 
+/**
+ * Enqueue frontend styles and scripts, and localize variables.
+ */
 function sog_enqueue_scripts() {
     $plugin_url = plugin_dir_url(__FILE__);
 
     wp_enqueue_style('sog-style', $plugin_url . 'css/sog-style.css', [], time());
     wp_enqueue_script('sog-script', $plugin_url . 'js/sog-script.js', [], time(), true);
 
+    // Localize AJAX URLs, nonce and whitelist URL for JS
     wp_localize_script('sog-script', 'sog_ajax', [
-        'ajax_url'   => admin_url('admin-ajax.php'),
-        'plugin_url' => $plugin_url,
-        'nonce'      => wp_create_nonce('sog_log_nonce'),
-        'whitelist_url' => content_url('uploads/sog/exceptions.json') //For excptions.json in js script
+        'ajax_url'      => admin_url('admin-ajax.php'),
+        'plugin_url'    => $plugin_url,
+        'nonce'         => wp_create_nonce('sog_log_nonce'),
+        'whitelist_url' => content_url('uploads/sog/exceptions.json') // exceptions.json for JS
     ]);
 
-    // Extra settings: rel options
+    // Localize settings for rel attributes
     wp_localize_script('sog-script', 'sog_settings', [
         'rel_noopener'   => get_option('sog_add_rel_noopener', '1'),
         'rel_noreferrer' => get_option('sog_add_rel_noreferrer', '1'),
     ]);
 
-    // Translate
+    // Localize custom appearance options
+    wp_localize_script('sog-script', 'sog_custom', [
+        'modal_title'    => get_option('sog_modal_title', 'Warning notice'),
+        'continue_color' => get_option('sog_continue_color', '#28a745'),
+        'cancel_color'   => get_option('sog_cancel_color', '#dc3545'),
+    ]);
+
+    // Localization strings for UI text
     wp_localize_script('sog-script', 'sog_i18n', [
-	'modal_title'    => __('Warning notice', 'sog'),
+        'modal_title'    => __('Warning notice', 'sog'),
         'modal_line_1'   => __('You are leaving %s to access an external site.', 'sog'),
         'modal_line_2'   => __('%s is not responsible for the content, accuracy, availability or security policies of the site that will be redirected. Access is achieved without exclusive liability.', 'sog'),
         'cancel_label'   => __('Cancel', 'sog'),
@@ -47,10 +57,12 @@ function sog_enqueue_scripts() {
         'site_domain'    => parse_url(home_url(), PHP_URL_HOST),
     ]);
 }
-
 add_action('wp_enqueue_scripts', 'sog_enqueue_scripts');
 
-// Logs
+
+/**
+ * Handle AJAX requests to log clicks on external links.
+ */
 add_action('wp_ajax_nopriv_sog_log_click', 'sog_log_click');
 add_action('wp_ajax_sog_log_click', 'sog_log_click');
 
@@ -68,7 +80,7 @@ function sog_log_click() {
     $ip_real = $_SERVER['REMOTE_ADDR'];
     $timestamp = current_time('mysql');
 
-    // IP Hidden
+    // Anonymize IP address
     if (filter_var($ip_real, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
         $ip_parts = explode('.', $ip_real);
         $ip_display = $ip_parts[0] . '.' . $ip_parts[1] . '.***.***';
@@ -80,8 +92,7 @@ function sog_log_click() {
         $ip_display = 'unknown';
     }
 
-    // IP Geolocation (ipinfo.io)
-    //$token = 'api-token';
+    // IP Geolocation using ipinfo.io
     $token = get_option('sog_ipinfo_token', '');
     $country = 'Unknown';
     $geo_url = "https://ipinfo.io/{$ip_real}/json" . ($token ? "?token={$token}" : "");
@@ -108,6 +119,7 @@ function sog_log_click() {
 
     $log_file = $log_dir . '/sog-clicks.log';
 
+    // Rotate log file if bigger than 1MB
     if (file_exists($log_file) && filesize($log_file) > 1024 * 1024) {
         rename($log_file, $log_file . '.' . time() . '.bak');
     }
@@ -118,12 +130,19 @@ function sog_log_click() {
     wp_send_json_success('Click logged');
 }
 
+
+/**
+ * Load plugin textdomain for translations.
+ */
 add_action('plugins_loaded', 'sog_load_textdomain');
 function sog_load_textdomain() {
-	    load_plugin_textdomain('sog', false, dirname(plugin_basename(__FILE__)) . '/languages/');
+    load_plugin_textdomain('sog', false, dirname(plugin_basename(__FILE__)) . '/languages/');
 }
 
-//Admin Panel - GUI
+
+/**
+ * Add admin menu page for plugin settings.
+ */
 add_action('admin_menu', 'sog_add_admin_menu');
 
 function sog_add_admin_menu() {
@@ -136,19 +155,24 @@ function sog_add_admin_menu() {
     );
 }
 
+
+/**
+ * Settings page content and logic.
+ */
 function sog_settings_page() {
     $upload_dir = wp_upload_dir();
     $exceptions_path = trailingslashit($upload_dir['basedir']) . 'sog/exceptions.json';
     $log_path = trailingslashit($upload_dir['basedir']) . 'sog/audit.log';
 
-    //ipinfo.io token variable
     $current_token = get_option('sog_ipinfo_token', '');
 
+    // Handle form submissions
     if (
         isset($_POST['sog_token']) ||
         isset($_POST['sog_exceptions']) ||
         isset($_POST['sog_clear_log'])
     ) {
+        // Clear audit log
         if (isset($_POST['sog_clear_log']) && check_admin_referer('sog_clear_log')) {
             if (file_exists($log_path)) {
                 if (is_writable($log_path)) {
@@ -162,59 +186,80 @@ function sog_settings_page() {
             }
         }
 
+        // Save settings (token, whitelist, rel options, modal appearance)
         if (
             (isset($_POST['sog_token']) || isset($_POST['sog_exceptions'])) &&
             check_admin_referer('sog_save_exceptions')
         ) {
-            // Save token if it was set
-	    if (isset($_POST['sog_token'])) {
-    $sanitized_token = sanitize_text_field($_POST['sog_token']);
-    update_option('sog_ipinfo_token', $sanitized_token);
+            // Save IPInfo token
+            if (isset($_POST['sog_token'])) {
+                $sanitized_token = sanitize_text_field($_POST['sog_token']);
+                update_option('sog_ipinfo_token', $sanitized_token);
 
-    // Save token in uploads/sog/ folder
-    $token_file = trailingslashit($upload_dir['basedir']) . 'sog/ipinfo.token';
-    $success = false;
+                // Save token to file in uploads/sog/
+                $token_file = trailingslashit($upload_dir['basedir']) . 'sog/ipinfo.token';
+                $success = false;
 
-    if (!file_exists(dirname($token_file))) {
-        wp_mkdir_p(dirname($token_file));
-    }
+                if (!file_exists(dirname($token_file))) {
+                    wp_mkdir_p(dirname($token_file));
+                }
 
-    if (file_put_contents($token_file, $sanitized_token) !== false) {
-        chmod($token_file, 0600);
-        echo '<div class="notice notice-success is-dismissible"><p>IPInfo token saved successfully.</p></div>';
-        $success = true;
-    } else {
-        echo '<div class="notice notice-error is-dismissible"><p> Error: Could not write IPInfo token file. Check file permissions in <code>' . esc_html(dirname($token_file)) . '</code>.</p></div>';
-    }
+                if (file_put_contents($token_file, $sanitized_token) !== false) {
+                    chmod($token_file, 0600);
+                    echo '<div class="notice notice-success is-dismissible"><p>IPInfo token saved successfully.</p></div>';
+                    $success = true;
+                } else {
+                    echo '<div class="notice notice-error is-dismissible"><p>Error: Could not write IPInfo token file. Check file permissions in <code>' . esc_html(dirname($token_file)) . '</code>.</p></div>';
+                }
 
-    if ($success) {
-        $current_token = $sanitized_token;
-    }
-}
-	    //Save rel options
-	    update_option('sog_add_rel_noopener', isset($_POST['sog_add_rel_noopener']) ? '1' : '0');
-	    update_option('sog_add_rel_noreferrer', isset($_POST['sog_add_rel_noreferrer']) ? '1' : '0'); 
+                if ($success) {
+                    $current_token = $sanitized_token;
+                }
+            }
 
-	    echo '<div class="notice notice-success is-dismissible"><p>Options for <code>rel="noopener"</code> and <code>rel="noreferrer"</code> were saved successfully.</p></div>';
+            // Save rel options
+            update_option('sog_add_rel_noopener', isset($_POST['sog_add_rel_noopener']) ? '1' : '0');
+            update_option('sog_add_rel_noreferrer', isset($_POST['sog_add_rel_noreferrer']) ? '1' : '0');
+            echo '<div class="notice notice-success is-dismissible"><p>Options for <code>rel="noopener"</code> and <code>rel="noreferrer"</code> were saved successfully.</p></div>';
 
-	    $user = wp_get_current_user();
-	    $ip = $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
-	    $timestamp = current_time('mysql');
+            // Save modal title
+            if (isset($_POST['sog_modal_title'])) {
+                $title = sanitize_text_field($_POST['sog_modal_title']);
+                update_option('sog_modal_title', $title);
+            }
 
-	    $log_rel_entry = sprintf(
-    		"[%s] Rel attribute options updated by: %s (%s) | IP: %s\n- noopener: %s\n- noreferrer: %s\n%s\n",
-    		$timestamp,
-    		$user->display_name,
-    		$user->user_login,
-    		$ip,
-    		get_option('sog_add_rel_noopener') === '1' ? 'enabled' : 'disabled',
-    		get_option('sog_add_rel_noreferrer') === '1' ? 'enabled' : 'disabled',
-    		str_repeat("-", 50)
-	    );
+            // Save button colors
+            if (isset($_POST['sog_continue_color'])) {
+                $continue_color = sanitize_hex_color($_POST['sog_continue_color']);
+                update_option('sog_continue_color', $continue_color);
+            }
 
-	    file_put_contents($log_path, $log_rel_entry, FILE_APPEND);
+            if (isset($_POST['sog_cancel_color'])) {
+                $cancel_color = sanitize_hex_color($_POST['sog_cancel_color']);
+                update_option('sog_cancel_color', $cancel_color);
+            }
 
-            // Process whitelist 
+            echo '<div class="notice notice-success is-dismissible"><p>Modal appearance settings saved successfully.</p></div>';
+
+            // Log rel options update
+            $user = wp_get_current_user();
+            $ip = $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
+            $timestamp = current_time('mysql');
+
+            $log_rel_entry = sprintf(
+                "[%s] Rel attribute options updated by: %s (%s) | IP: %s\n- noopener: %s\n- noreferrer: %s\n%s\n",
+                $timestamp,
+                $user->display_name,
+                $user->user_login,
+                $ip,
+                get_option('sog_add_rel_noopener') === '1' ? 'enabled' : 'disabled',
+                get_option('sog_add_rel_noreferrer') === '1' ? 'enabled' : 'disabled',
+                str_repeat("-", 50)
+            );
+
+            file_put_contents($log_path, $log_rel_entry, FILE_APPEND);
+
+            // Process whitelist exceptions
             if (isset($_POST['sog_exceptions'])) {
                 $raw = sanitize_textarea_field($_POST['sog_exceptions']);
                 $lines = array_filter(array_map('trim', explode("\n", $raw)));
@@ -239,25 +284,27 @@ function sog_settings_page() {
                     }
                     echo '</ul><p>Changes were not saved.</p></div>';
 
-		    //List reload from exceptions.json 
-    		    if (file_exists($exceptions_path)) {
-        		$json = file_get_contents($exceptions_path);
-        		$old_exceptions = json_decode($json, true);
-        		$current_exceptions = is_array($old_exceptions) ? $old_exceptions : [];
-    		    } else {
-        		$current_exceptions = [];
-		   }
+                    // Reload old exceptions from file if invalid input
+                    if (file_exists($exceptions_path)) {
+                        $json = file_get_contents($exceptions_path);
+                        $old_exceptions = json_decode($json, true);
+                        $current_exceptions = is_array($old_exceptions) ? $old_exceptions : [];
+                    } else {
+                        $current_exceptions = [];
+                    }
                 } else {
-                    // Read whitelist in order to compare
+                    // Compare with old exceptions before saving
                     $old_exceptions = [];
                     if (file_exists($exceptions_path)) {
                         $json = file_get_contents($exceptions_path);
                         $old_exceptions = json_decode($json, true);
-                        if (!is_array($old_exceptions)) $old_exceptions = [];
+                        if (!is_array($old_exceptions)) {
+                            $old_exceptions = [];
+                        }
                     }
 
                     if ($exceptions !== $old_exceptions) {
-                        // Save new whitelist
+                        // Save new exceptions to JSON file
                         if (!file_exists(dirname($exceptions_path))) {
                             wp_mkdir_p(dirname($exceptions_path));
                         }
@@ -266,7 +313,7 @@ function sog_settings_page() {
                             json_encode($exceptions, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)
                         );
 
-                        // Logging activity only if whitelist was changed
+                        // Log whitelist update
                         $user = wp_get_current_user();
                         $ip = $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
                         $timestamp = current_time('mysql');
@@ -287,7 +334,6 @@ function sog_settings_page() {
 
                         $current_exceptions = $exceptions;
                     } else {
-                        // No changes
                         echo '<div class="notice notice-info is-dismissible"><p>No changes detected in whitelist.</p></div>';
                         $current_exceptions = $exceptions;
                     }
@@ -295,30 +341,34 @@ function sog_settings_page() {
             }
         }
     } else {
+        // Load exceptions from JSON file if no form submission
         $current_exceptions = [];
 
         if (file_exists($exceptions_path) && is_readable($exceptions_path)) {
-           $json = file_get_contents($exceptions_path);
+            $json = file_get_contents($exceptions_path);
 
-           $decoded = json_decode($json, true);
-           if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
-               $current_exceptions = $decoded;
-           } elseif (strlen(trim($json)) > 0) {
-	       echo '<div class="notice notice-error is-dismissible"><p><strong>Error:</strong>The <code>exceptions.json</code> file exists, but it is not a valid JSON file. It may be corrupted or have been manually edited incorrectly.</p></div>';
-	   }
-       }
-   }
+            $decoded = json_decode($json, true);
+            if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                $current_exceptions = $decoded;
+            } elseif (strlen(trim($json)) > 0) {
+                echo '<div class="notice notice-error is-dismissible"><p><strong>Error:</strong>The <code>exceptions.json</code> file exists, but it is not a valid JSON file. It may be corrupted or have been manually edited incorrectly.</p></div>';
+            }
+        }
+    }
 
-   // Ensure $current_exceptions is always an array
-   if (!is_array($current_exceptions)) {
+    // Ensure exceptions is always an array before loading the settings page template
+    if (!is_array($current_exceptions)) {
         $current_exceptions = [];
-   }
+    }
 
-   // Include template
-   include plugin_dir_path(__FILE__) . 'inc/settings-page.php';
+    // Include admin settings page template
+    include plugin_dir_path(__FILE__) . 'inc/settings-page.php';
 }
 
-// Go to settings SOG section from Wordpress plugin page
+
+/**
+ * Add a Settings link on the Plugins page.
+ */
 add_filter('plugin_action_links_' . plugin_basename(__FILE__), 'sog_add_settings_link');
 
 function sog_add_settings_link($links) {
@@ -327,19 +377,19 @@ function sog_add_settings_link($links) {
     return $links;
 }
 
-//Disable plugin SOG from Wordpress Plugin page
-// Cleanup
+
+/**
+ * Cleanup on plugin deactivation: remove options and files.
+ */
 register_deactivation_hook(__FILE__, 'sog_on_deactivation');
 
 function sog_on_deactivation() {
-    // Delete token
+    // Delete saved options
     delete_option('sog_ipinfo_token');
-
-    //Delete rel options
     delete_option('sog_add_rel_noopener');
     delete_option('sog_add_rel_noreferrer');
 
-    // Delete files
+    // Delete plugin files in uploads/sog/
     $upload_dir = wp_upload_dir();
     $sog_dir = trailingslashit($upload_dir['basedir']) . 'sog';
 
@@ -350,16 +400,22 @@ function sog_on_deactivation() {
                 @unlink($file);
             }
         }
-        @rmdir($sog_dir); // Delete folder if it is empty
+        @rmdir($sog_dir); // Remove folder if empty
     }
 }
 
-//Dismissible messages
+
+/**
+ * Enqueue dismissible notice script in admin.
+ */
 add_action('admin_enqueue_scripts', function() {
     wp_enqueue_script('wp-dismiss-notice');
 });
 
-//CSS for inc/settings-page.php
+
+/**
+ * Enqueue admin CSS only on plugin settings page.
+ */
 add_action('admin_enqueue_scripts', function($hook) {
     if ($hook === 'settings_page_sog') {
         wp_enqueue_style(
@@ -370,4 +426,3 @@ add_action('admin_enqueue_scripts', function($hook) {
         );
     }
 });
-

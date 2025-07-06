@@ -32,24 +32,24 @@ document.addEventListener("DOMContentLoaded", function () {
     function initModal(exceptions) {
         const modal = document.createElement("div");
         modal.innerHTML = `
-          <div class="sog-modal-overlay" id="sogModal">
-            <div class="sog-modal-box">
-              <h2>
-                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10
-                           10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
-                </svg>
-                ${sog_i18n.modal_title}
-              </h2>
-              <p>${sog_i18n.modal_line_1.replace('%s', sog_i18n.site_domain)}</p>
-              <p>${sog_i18n.modal_line_2.replace('%s', sog_i18n.site_name)}</p>
-              <p id="sog-link-display" class="sog-url"></p>
-              <div class="sog-buttons">
-                <button id="sog-cancel" aria-label="${sog_i18n.cancel_aria}">${sog_i18n.cancel_label}</button>
-                <button id="sog-continue" aria-label="${sog_i18n.continue_aria}">${sog_i18n.continue_label}</button>
-              </div>
+            <div class="sog-modal-overlay" id="sogModal">
+                <div class="sog-modal-box">
+                    <h2>
+                        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10
+                                     10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+                        </svg>
+                        ${sog_custom.modal_title || sog_i18n.modal_title}
+                    </h2>
+                    <p>${sog_i18n.modal_line_1.replace('%s', sog_i18n.site_domain)}</p>
+                    <p>${sog_i18n.modal_line_2.replace('%s', sog_i18n.site_name)}</p>
+                    <p id="sog-link-display" class="sog-url"></p>
+                    <div class="sog-buttons">
+                        <button id="sog-cancel" aria-label="${sog_i18n.cancel_aria}">${sog_i18n.cancel_label}</button>
+                        <button id="sog-continue" aria-label="${sog_i18n.continue_aria}">${sog_i18n.continue_label}</button>
+                    </div>
+                </div>
             </div>
-          </div>
         `;
         document.body.appendChild(modal);
 
@@ -57,6 +57,16 @@ document.addEventListener("DOMContentLoaded", function () {
         const sogLinkDisplay = document.getElementById("sog-link-display");
         const sogCancel = document.getElementById("sog-cancel");
         const sogContinue = document.getElementById("sog-continue");
+
+        // Aplica colores personalizados
+        if (sog_custom.continue_color) {
+            sogContinue.style.backgroundColor = sog_custom.continue_color;
+            sogContinue.style.color = "#fff";
+        }
+        if (sog_custom.cancel_color) {
+            sogCancel.style.backgroundColor = sog_custom.cancel_color;
+            sogCancel.style.color = "#fff";
+        }
 
         let targetUrl = null;
 
@@ -147,10 +157,6 @@ document.addEventListener("DOMContentLoaded", function () {
                     tempLink.setAttribute("rel", relValues.join(" "));
                 }
 
-                // Debug URL - Browser console
-                //console.log("URL:", urlToOpen);
-        	//console.log("Rel used:", tempLink.getAttribute("rel"));
-
                 document.body.appendChild(tempLink);
                 tempLink.click();
                 document.body.removeChild(tempLink);
@@ -160,3 +166,4 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 });
+
