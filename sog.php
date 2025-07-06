@@ -241,7 +241,7 @@ function sog_settings_page() {
 
             echo '<div class="notice notice-success is-dismissible"><p>Modal appearance settings saved successfully.</p></div>';
 
-            // Enviar correo de alerta
+            // Send email when some configuration in plugin was changed
 	    $admin_email = get_option('admin_email');
 	    $subject = 'SOG Plugin - Configuration changed';
 	    $user = wp_get_current_user();
