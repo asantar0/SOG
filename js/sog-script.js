@@ -58,7 +58,7 @@ document.addEventListener("DOMContentLoaded", function () {
         const sogCancel = document.getElementById("sog-cancel");
         const sogContinue = document.getElementById("sog-continue");
 
-        // Aplica colores personalizados
+        // Personalized colors
         if (sog_custom.continue_color) {
             sogContinue.style.backgroundColor = sog_custom.continue_color;
             sogContinue.style.color = "#fff";
