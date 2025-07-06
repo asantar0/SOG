@@ -248,7 +248,7 @@ function sog_settings_page() {
 	    $ip = $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
 	    $timestamp = current_time('mysql');
 
-	    $body = "Se ha realizado un cambio en la configuración del plugin Secure Outbound Gateway (SOG).\n\n";
+	    $body = "A change has been made to the Secure Outbound Gateway (SOG) plugin configuration.\n\n";
 	    $body .= "Date: $timestamp\n";
 	    $body .= "User: {$user->display_name} ({$user->user_login})\n";
 	    $body .= "IP: $ip\n\n";
