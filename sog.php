@@ -241,6 +241,48 @@ function sog_settings_page() {
 
             echo '<div class="notice notice-success is-dismissible"><p>Modal appearance settings saved successfully.</p></div>';
 
+            // Enviar correo de alerta
+	    $admin_email = get_option('admin_email');
+	    $subject = 'SOG Plugin - Configuration changed';
+	    $user = wp_get_current_user();
+	    $ip = $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
+	    $timestamp = current_time('mysql');
+
+	    $body = "Se ha realizado un cambio en la configuración del plugin Secure Outbound Gateway (SOG).\n\n";
+	    $body .= "Date: $timestamp\n";
+	    $body .= "User: {$user->display_name} ({$user->user_login})\n";
+	    $body .= "IP: $ip\n\n";
+	    $body .= "Changes detected:\n";
+
+	    if (isset($_POST['sog_token'])) {
+    		$body .= "- Token IPInfo: " . esc_html(sanitize_text_field($_POST['sog_token'])) . "\n";
+	    }
+	    if (isset($_POST['sog_modal_title'])) {
+    		$body .= "- Modal title: " . esc_html(sanitize_text_field($_POST['sog_modal_title'])) . "\n";
+	    }
+	    if (isset($_POST['sog_continue_color'])) {
+    		$body .= "- Continue button color: " . esc_html(sanitize_hex_color($_POST['sog_continue_color'])) . "\n";
+	    }
+	    if (isset($_POST['sog_cancel_color'])) {
+    		$body .= "- Cancel button color: " . esc_html(sanitize_hex_color($_POST['sog_cancel_color'])) . "\n";
+	    }
+	    if (isset($_POST['sog_add_rel_noopener']) || isset($_POST['sog_add_rel_noreferrer'])) {
+    		$body .= "- rel=\"noopener\": " . (isset($_POST['sog_add_rel_noopener']) ? 'Sí' : 'No') . "\n";
+    		$body .= "- rel=\"noreferrer\": " . (isset($_POST['sog_add_rel_noreferrer']) ? 'Sí' : 'No') . "\n";
+	    }
+	    if (isset($_POST['sog_exceptions'])) {
+    		$raw = sanitize_textarea_field($_POST['sog_exceptions']);
+    		$lines = array_filter(array_map('trim', explode("\n", $raw)));
+    		$body .= "- Whitelist updated: \n";
+    		foreach ($lines as $line) {
+        	     $body .= "  · " . esc_html($line) . "\n";
+    	 	}
+	    }
+
+	   // Send mails if some option was changed
+	   wp_mail($admin_email, $subject, $body);
+
+
             // Log rel options update
             $user = wp_get_current_user();
             $ip = $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
