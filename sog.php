@@ -241,14 +241,14 @@ function sog_settings_page() {
 
             echo '<div class="notice notice-success is-dismissible"><p>Modal appearance settings saved successfully.</p></div>';
 
-            // Send email when some configuration in plugin was changed
+            // Send mail when changes were detected.
 	    $admin_email = get_option('admin_email');
 	    $subject = 'SOG Plugin - Configuration changed';
 	    $user = wp_get_current_user();
 	    $ip = $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
 	    $timestamp = current_time('mysql');
 
-	    $body = "A change has been made to the Secure Outbound Gateway (SOG) plugin configuration.\n\n";
+	    $body = "A change has been made to the Secure Outbound Gateway plugin configuration.\n\n";
 	    $body .= "Date: $timestamp\n";
 	    $body .= "User: {$user->display_name} ({$user->user_login})\n";
 	    $body .= "IP: $ip\n\n";
@@ -280,8 +280,21 @@ function sog_settings_page() {
 	    }
 
 	   // Send mails if some option was changed
-	   wp_mail($admin_email, $subject, $body);
+	   $headers = ['Content-Type: text/plain; charset=UTF-8'];
+	   $sent = wp_mail($admin_email, $subject, $body, $headers);
+	   //wp_mail($admin_email, $subject, $body, $headers);
+	   
+	   $log_msg = sprintf(
+    		"[%s] Email notification: %s\nSubject: %s\nBody: %s\n%s\n",
+    		current_time('mysql'),
+    		$sent ? 'SENT' : 'NOT SENT',
+    		$subject,
+    		$body,
+		implode(', ', $headers),
+    		str_repeat('-', 50)
+            );
 
+	    file_put_contents($log_path, $log_msg, FILE_APPEND);  
 
             // Log rel options update
             $user = wp_get_current_user();

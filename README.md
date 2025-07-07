@@ -73,7 +73,6 @@ From the WordPress backend you can:
 - Advanced exceptions (by pattern, link type, or category)
 - Log export (CSV)
 - Integration with Google Analytics or Matomo
-- Email/Slack alerts for critical clicks
 - Delete accepted domains button
 - Tracking with Matomo/Google Analytics/Microsoft Clarity
 
