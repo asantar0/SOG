@@ -242,101 +242,101 @@ function sog_settings_page() {
             echo '<div class="notice notice-success is-dismissible"><p>Modal appearance settings saved successfully.</p></div>';
 
             // Send mail when changes were detected.
-$was_email_enabled       = get_option('sog_email_enabled', '0');
-$new_email_enabled       = isset($_POST['sog_email_enabled']) ? '1' : '0';
-$email_enabled_just_now  = ($was_email_enabled === '0' && $new_email_enabled === '1');
-$email_disabled_just_now = ($was_email_enabled === '1' && $new_email_enabled === '0');
+            $was_email_enabled       = get_option('sog_email_enabled', '0');
+            $new_email_enabled       = isset($_POST['sog_email_enabled']) ? '1' : '0';
+            $email_enabled_just_now  = ($was_email_enabled === '0' && $new_email_enabled === '1');
+            $email_disabled_just_now = ($was_email_enabled === '1' && $new_email_enabled === '0');
 
-update_option('sog_email_enabled', $new_email_enabled);
+            update_option('sog_email_enabled', $new_email_enabled);
 
-if ($email_enabled_just_now) {
-    add_settings_error(
-        'sog_email_enabled',
-        'sog_email_enabled_enabled',
-        'Email notifications have been <strong>enabled</strong>.',
-        'updated'
-    );
-} elseif ($email_disabled_just_now) {
-    add_settings_error(
-        'sog_email_enabled',
-        'sog_email_enabled_disabled',
-        'Email notifications have been <strong>disabled</strong>.',
-        'warning'
-    );
-}
+            if ($email_enabled_just_now) {
+                add_settings_error(
+                    'sog_email_enabled',
+                    'sog_email_enabled_enabled',
+                    'Email notifications have been <strong>enabled</strong>.',
+                    'updated'
+                );
+            } elseif ($email_disabled_just_now) {
+                add_settings_error(
+                    'sog_email_enabled',
+                    'sog_email_enabled_disabled',
+                    'Email notifications have been <strong>disabled</strong>.',
+                    'warning'
+                );
+            }
 
 
-$admin_email = get_option('admin_email');
-$user        = wp_get_current_user();
-$ip          = $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
-$timestamp   = current_time('mysql');
-$headers     = ['Content-Type: text/html; charset=UTF-8'];
-$sent        = false;
+            $admin_email = get_option('admin_email');
+            $user        = wp_get_current_user();
+            $ip          = $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
+            $timestamp   = current_time('mysql');
+            $headers     = ['Content-Type: text/html; charset=UTF-8'];
+            $sent        = false;
 
-if ($email_enabled_just_now) {
-    $subject = 'SOG Plugin - Email notifications enabled';
-    $body  = "<p>The email notifications for the SOG plugin have been <strong>enabled</strong>.</p>";
-    $body .= "<p><strong>Date:</strong> $timestamp<br>";
-    $body .= "<strong>User:</strong> {$user->display_name} ({$user->user_login})<br>";
-    $body .= "<strong>IP:</strong> $ip</p>";
-    $sent = wp_mail($admin_email, $subject, $body, $headers);
+            if ($email_enabled_just_now) {
+                $subject = 'SOG Plugin - Email notifications enabled';
+                $body  = "<p>The email notifications for the SOG plugin have been <strong>enabled</strong>.</p>";
+                $body .= "<p><strong>Date:</strong> $timestamp<br>";
+                $body .= "<strong>User:</strong> {$user->display_name} ({$user->user_login})<br>";
+                $body .= "<strong>IP:</strong> $ip</p>";
+                $sent = wp_mail($admin_email, $subject, $body, $headers);
 
-} elseif ($email_disabled_just_now) {
-    $subject = 'SOG Plugin - Email notifications disabled';
-    $body  = "<p>The email notifications for the SOG plugin have been <strong>disabled</strong>.</p>";
-    $body .= "<p><strong>Date:</strong> $timestamp<br>";
-    $body .= "<strong>User:</strong> {$user->display_name} ({$user->user_login})<br>";
-    $body .= "<strong>IP:</strong> $ip</p>";
-    $sent = wp_mail($admin_email, $subject, $body, $headers);
+            } elseif ($email_disabled_just_now) {
+                $subject = 'SOG Plugin - Email notifications disabled';
+                $body  = "<p>The email notifications for the SOG plugin have been <strong>disabled</strong>.</p>";
+                $body .= "<p><strong>Date:</strong> $timestamp<br>";
+                $body .= "<strong>User:</strong> {$user->display_name} ({$user->user_login})<br>";
+                $body .= "<strong>IP:</strong> $ip</p>";
+                $sent = wp_mail($admin_email, $subject, $body, $headers);
 
-} elseif (get_option('sog_email_enabled', '1') === '1') {
-    $subject = 'SOG Plugin - Configuration changed';
-    $body  = "<p>A change has been made to the Secure Outbound Gateway plugin configuration.</p>";
-    $body .= "<p><strong>Date:</strong> $timestamp<br>";
-    $body .= "<strong>User:</strong> {$user->display_name} ({$user->user_login})<br>";
-    $body .= "<strong>IP:</strong> $ip</p>";
-    $body .= "<p><strong>Changes detected:</strong><ul>";
+            } elseif (get_option('sog_email_enabled', '1') === '1') {
+                $subject = 'SOG Plugin - Configuration changed';
+                $body  = "<p>A change has been made to the Secure Outbound Gateway plugin configuration.</p>";
+                $body .= "<p><strong>Date:</strong> $timestamp<br>";
+                $body .= "<strong>User:</strong> {$user->display_name} ({$user->user_login})<br>";
+                $body .= "<strong>IP:</strong> $ip</p>";
+                $body .= "<p><strong>Changes detected:</strong><ul>";
 
-    if (isset($_POST['sog_token'])) {
-        $body .= "<li><strong>Token IPInfo:</strong> " . esc_html(sanitize_text_field($_POST['sog_token'])) . "</li>";
-    }
-    if (isset($_POST['sog_modal_title'])) {
-        $body .= "<li><strong>Modal title:</strong> " . esc_html(sanitize_text_field($_POST['sog_modal_title'])) . "</li>";
-    }
-    if (isset($_POST['sog_continue_color'])) {
-        $body .= "<li><strong>Continue button color:</strong> " . esc_html(sanitize_hex_color($_POST['sog_continue_color'])) . "</li>";
-    }
-    if (isset($_POST['sog_cancel_color'])) {
-        $body .= "<li><strong>Cancel button color:</strong> " . esc_html(sanitize_hex_color($_POST['sog_cancel_color'])) . "</li>";
-    }
-    if (isset($_POST['sog_add_rel_noopener']) || isset($_POST['sog_add_rel_noreferrer'])) {
-        $body .= "<li><strong>rel=\"noopener\"</strong>: " . (isset($_POST['sog_add_rel_noopener']) ? 'Yes' : 'No') . "</li>";
-        $body .= "<li><strong>rel=\"noreferrer\"</strong>: " . (isset($_POST['sog_add_rel_noreferrer']) ? 'Yes' : 'No') . "</li>";
-    }
-    if (isset($_POST['sog_exceptions'])) {
-        $raw  = sanitize_textarea_field($_POST['sog_exceptions']);
-        $lines = array_filter(array_map('trim', explode("\n", $raw)));
-        $body .= "<li><strong>Whitelist updated:</strong><ul>";
-        foreach ($lines as $line) {
-            $body .= "<li>" . esc_html($line) . "</li>";
-        }
-        $body .= "</ul></li>";
-    }
+                if (isset($_POST['sog_token'])) {
+                    $body .= "<li><strong>Token IPInfo:</strong> " . esc_html(sanitize_text_field($_POST['sog_token'])) . "</li>";
+                }
+                if (isset($_POST['sog_modal_title'])) {
+                    $body .= "<li><strong>Modal title:</strong> " . esc_html(sanitize_text_field($_POST['sog_modal_title'])) . "</li>";
+                }
+                if (isset($_POST['sog_continue_color'])) {
+                    $body .= "<li><strong>Continue button color:</strong> " . esc_html(sanitize_hex_color($_POST['sog_continue_color'])) . "</li>";
+                }
+                if (isset($_POST['sog_cancel_color'])) {
+                    $body .= "<li><strong>Cancel button color:</strong> " . esc_html(sanitize_hex_color($_POST['sog_cancel_color'])) . "</li>";
+                }
+                if (isset($_POST['sog_add_rel_noopener']) || isset($_POST['sog_add_rel_noreferrer'])) {
+                    $body .= "<li><strong>rel=\"noopener\"</strong>: " . (isset($_POST['sog_add_rel_noopener']) ? 'Yes' : 'No') . "</li>";
+                    $body .= "<li><strong>rel=\"noreferrer\"</strong>: " . (isset($_POST['sog_add_rel_noreferrer']) ? 'Yes' : 'No') . "</li>";
+                }
+                if (isset($_POST['sog_exceptions'])) {
+                    $raw   = sanitize_textarea_field($_POST['sog_exceptions']);
+                    $lines = array_filter(array_map('trim', explode("\n", $raw)));
+                    $body .= "<li><strong>Whitelist updated:</strong><ul>";
+                    foreach ($lines as $line) {
+                        $body .= "<li>" . esc_html($line) . "</li>";
+                    }
+                    $body .= "</ul></li>";
+                }
 
-    $body .= "</ul></p>";
-    $sent = wp_mail($admin_email, $subject, $body, $headers);
-}
+                $body .= "</ul></p>";
+                $sent = wp_mail($admin_email, $subject, $body, $headers);
+            }
 
-$log_msg = sprintf(
-    "[%s] Email notification: %s\nSubject: %s\nBody:\n%s\n%s\n%s\n",
-    $timestamp,
-    $sent ? 'SENT' : 'NOT SENT',
-    $subject ?? '(none)',
-    strip_tags($body ?? '(empty)'),
-    implode(', ', $headers),
-    str_repeat('-', 50)
-);
-file_put_contents($log_path, $log_msg, FILE_APPEND);
+            $log_msg = sprintf(
+                "[%s] Email notification: %s\nSubject: %s\nBody:\n%s\n%s\n%s\n",
+                $timestamp,
+                $sent ? 'SENT' : 'NOT SENT',
+                $subject ?? '(none)',
+                strip_tags($body ?? '(empty)'),
+                implode(', ', $headers),
+                str_repeat('-', 50)
+            );
+            file_put_contents($log_path, $log_msg, FILE_APPEND);
 
             // Log rel options update
             $user = wp_get_current_user();
