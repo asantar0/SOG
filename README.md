@@ -24,6 +24,7 @@ If your site redirects to third-party services (links to banks, affiliates, etc.
 - Visual style adaptable via CSS.
 - Use of ipinfo.io to log Countries.
 - Localstore in order to avoid warning message to same site accepted.
+- Email alerting changes (enable, disable, update).
 
 
 ## External Link Security (`rel="noopener noreferrer"`)
@@ -63,7 +64,7 @@ From the WordPress backend you can:
 - Automatically validate that the entered URLs are correctly formatted.
 - Delete the audit log with a single click.
 - Set IP Info token.
-- Receive an automatic email notification each time the log is deleted. [PENDING]
+- Enable or disable an automatic email notification each time the log is deleted.
 
 
 ## Roadmap
