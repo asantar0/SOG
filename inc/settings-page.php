@@ -79,11 +79,22 @@
             <input type="color" name="sog_cancel_color" id="sog_cancel_color" value="<?php echo esc_attr(get_option('sog_cancel_color', '#dc3545')); ?>">
         </p>
 
+	<hr>
+	<h2>Email Notification</h2>
+	<p>
+    	    <label>
+                <input type="checkbox" name="sog_email_enabled" value="1" <?php checked(get_option('sog_email_enabled', '1'), '1'); ?> />
+        	Enable email notification when settings change
+    	    </label>
+	</p>
+	<br>
         <p>
             <input type="submit" class="button button-primary" value="Save changes">
         </p>
+
     </form>
 
+    <hr>
     <div class="sog-warning-zone">
         <h2>Warning Zone</h2>
         <p>This action will permanently delete the audit log. This cannot be undone.</p>
