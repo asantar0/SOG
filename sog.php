@@ -333,16 +333,22 @@ function sog_settings_page() {
                 $sent = wp_mail($admin_email, $subject, $body, $headers);
             }
 
-            $log_msg = sprintf(
-                "[%s] Email notification: %s\nSubject: %s\nBody:\n%s\n%s\n%s\n",
-                $timestamp,
-                $sent ? 'SENT' : 'NOT SENT',
-                $subject ?? '(none)',
-                strip_tags($body ?? '(empty)'),
-                implode(', ', $headers),
-                str_repeat('-', 50)
-            );
-            file_put_contents($log_path, $log_msg, FILE_APPEND);
+	    //Write log about mail sent in audit.log
+	    if ($was_email_enabled === '1') {
+    		$email_log_entry = [
+        	    'type'      => 'email_notification',
+           	    'timestamp' => $timestamp,
+        	    'status'    => $sent ? 'sent' : 'not_sent',
+        	    'subject'   => $subject ?? '(none)',
+        	    'user'      => [
+            		'display_name' => $user->display_name,
+            		'user_login'   => $user->user_login,
+            		'ip'           => $ip,
+        	     ],
+    	   ];
+
+    	   file_put_contents($log_path, json_encode($email_log_entry, JSON_UNESCAPED_SLASHES) . PHP_EOL, FILE_APPEND | LOCK_EX);
+	   }
 
             // Log rel options update
 	    $log_entry = [
