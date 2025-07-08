@@ -108,7 +108,13 @@ function sog_log_click() {
         }
     }
 
-    $log_entry = "[$timestamp] IP: $ip_display - Country: $country - Action: $action_type - URL: $url\n";
+    $log_entry = json_encode([
+        'timestamp' => $timestamp,
+        'ip'        => $ip_display,
+        'country'   => $country,
+        'action'    => $action_type,
+        'url'       => $url
+    ]) . "\n";
 
     $upload_dir = wp_upload_dir();
     $log_dir = trailingslashit($upload_dir['basedir']) . 'sog';
@@ -339,22 +345,20 @@ function sog_settings_page() {
             file_put_contents($log_path, $log_msg, FILE_APPEND);
 
             // Log rel options update
-            $user = wp_get_current_user();
-            $ip = $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
-            $timestamp = current_time('mysql');
-
-            $log_rel_entry = sprintf(
-                "[%s] Rel attribute options updated by: %s (%s) | IP: %s\n- noopener: %s\n- noreferrer: %s\n%s\n",
-                $timestamp,
-                $user->display_name,
-                $user->user_login,
-                $ip,
-                get_option('sog_add_rel_noopener') === '1' ? 'enabled' : 'disabled',
-                get_option('sog_add_rel_noreferrer') === '1' ? 'enabled' : 'disabled',
-                str_repeat("-", 50)
-            );
-
-            file_put_contents($log_path, $log_rel_entry, FILE_APPEND);
+	    $log_entry = [
+                'type'      => 'rel_attribute_update',
+                'timestamp' => $timestamp,
+                'user'      => [
+                    'display_name' => $user->display_name,
+                    'user_login'   => $user->user_login,
+                    'ip'           => $ip,
+                ],
+                'rel_attributes' => [
+                    'noopener'   => get_option('sog_add_rel_noopener') === '1',
+                    'noreferrer' => get_option('sog_add_rel_noreferrer') === '1',
+                ]
+            ];
+            file_put_contents($log_path, json_encode($log_entry, JSON_UNESCAPED_SLASHES) . "\n", FILE_APPEND | LOCK_EX);
 
             // Process whitelist exceptions
             if (isset($_POST['sog_exceptions'])) {
@@ -411,25 +415,22 @@ function sog_settings_page() {
                         );
 
                         // Log whitelist update
-                        $user = wp_get_current_user();
-                        $ip = $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
-                        $timestamp = current_time('mysql');
-                        $log_entry = sprintf(
-                            "[%s] Modified by: %s (%s) | IP: %s\n",
-                            $timestamp,
-                            $user->display_name,
-                            $user->user_login,
-                            $ip
-                        );
-                        foreach ($exceptions as $e) {
-                            $log_entry .= "- {$e}\n";
-                        }
-                        $log_entry .= str_repeat("-", 50) . "\n";
-                        file_put_contents($log_path, $log_entry, FILE_APPEND);
+                        $log_entry = [
+                            'type'      => 'whitelist_update',
+                            'timestamp' => $timestamp,
+                            'user'      => [
+                                'display_name' => $user->display_name,
+                                'user_login'   => $user->user_login,
+                                'ip'           => $ip,
+                            ],
+                            'whitelist' => $exceptions,
+                        ];
+                        file_put_contents($log_path, json_encode($log_entry, JSON_UNESCAPED_SLASHES) . "\n", FILE_APPEND | LOCK_EX);
 
                         echo '<div class="notice notice-success is-dismissible"><p>Whitelist updated successfully.</p></div>';
 
                         $current_exceptions = $exceptions;
+
                     } else {
                         echo '<div class="notice notice-info is-dismissible"><p>No changes detected in whitelist.</p></div>';
                         $current_exceptions = $exceptions;
