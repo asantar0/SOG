@@ -161,7 +161,6 @@ function sog_add_admin_menu() {
     );
 }
 
-
 /**
  * Settings page content and logic.
  */
@@ -180,8 +179,25 @@ function sog_settings_page() {
     ) {
         // Clear audit log
         if (isset($_POST['sog_clear_log']) && check_admin_referer('sog_clear_log')) {
+            $user = wp_get_current_user();
+            $ip = $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
+            $timestamp = current_time('mysql');
+            $admin_email = get_option('admin_email');
+            $headers = ['Content-Type: text/html; charset=UTF-8'];
+            
             if (file_exists($log_path)) {
                 if (is_writable($log_path)) {
+                    // Send email notification about audit log deletion
+                    $subject = 'SOG Plugin - Audit Log Deleted';
+                    $body = "<p><strong>WARNING:</strong> The audit log for the SOG plugin has been <strong>deleted</strong>.</p>";
+                    $body .= "<p><strong>Date:</strong> $timestamp<br>";
+                    $body .= "<strong>User:</strong> {$user->display_name} ({$user->user_login})<br>";
+                    $body .= "<strong>IP:</strong> $ip</p>";
+                    $body .= "<p><strong>Action:</strong> Manual deletion via admin panel</p>";
+                    
+                    $sent = wp_mail($admin_email, $subject, $body, $headers);
+                    
+                    // Now delete the log file
                     unlink($log_path);
                     echo '<div class="notice notice-warning is-dismissible"><p>Audit log deleted.</p></div>';
                 } else {
@@ -223,10 +239,40 @@ function sog_settings_page() {
                 }
             }
 
-            // Save rel options
-            update_option('sog_add_rel_noopener', isset($_POST['sog_add_rel_noopener']) ? '1' : '0');
-            update_option('sog_add_rel_noreferrer', isset($_POST['sog_add_rel_noreferrer']) ? '1' : '0');
-            echo '<div class="notice notice-success is-dismissible"><p>Options for <code>rel="noopener"</code> and <code>rel="noreferrer"</code> were saved successfully.</p></div>';
+        // Save rel options
+	    $old_noopener   = get_option('sog_add_rel_noopener', '1');
+	    $old_noreferrer = get_option('sog_add_rel_noreferrer', '1');
+
+	    $new_noopener   = isset($_POST['sog_add_rel_noopener']) ? '1' : '0';
+	    $new_noreferrer = isset($_POST['sog_add_rel_noreferrer']) ? '1' : '0';
+
+	    if ($old_noopener !== $new_noopener || $old_noreferrer !== $new_noreferrer) {
+    		echo '<div class="notice notice-success is-dismissible"><p>Options for <code>rel="noopener"</code> and <code>rel="noreferrer"</code> were saved successfully.</p></div>';
+
+    		$user = wp_get_current_user();
+    		$ip = $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
+    		$timestamp = current_time('mysql');
+    		$log_path = trailingslashit(wp_upload_dir()['basedir']) . 'sog/audit.log';
+
+    		$log_data = [
+        	    'type'       => 'rel_attribute_update',
+        	    'timestamp'  => $timestamp,
+        	    'user'       => [
+            		'display_name' => $user->display_name,
+            		'user_login'   => $user->user_login,
+            		'ip'           => $ip
+        	    ],
+        	    'rel_attributes' => [
+            	    	'noopener'   => $new_noopener === '1',
+            	    	'noreferrer' => $new_noreferrer === '1'
+        	    ]
+    		];
+
+    	        file_put_contents($log_path, json_encode($log_data, JSON_UNESCAPED_SLASHES) . "\n", FILE_APPEND);
+	    }
+
+	    update_option('sog_add_rel_noopener', $new_noopener);
+	    update_option('sog_add_rel_noreferrer', $new_noreferrer);
 
             // Save modal title
             if (isset($_POST['sog_modal_title'])) {
@@ -334,7 +380,7 @@ function sog_settings_page() {
             }
 
 	    //Write log about mail sent in audit.log
-	    if ($was_email_enabled === '1') {
+	    if ($was_email_enabled === '1' || $email_enabled_just_now || $email_disabled_just_now) {
     		$email_log_entry = [
         	    'type'      => 'email_notification',
            	    'timestamp' => $timestamp,
@@ -349,22 +395,6 @@ function sog_settings_page() {
 
     	   file_put_contents($log_path, json_encode($email_log_entry, JSON_UNESCAPED_SLASHES) . PHP_EOL, FILE_APPEND | LOCK_EX);
 	   }
-
-            // Log rel options update
-	    $log_entry = [
-                'type'      => 'rel_attribute_update',
-                'timestamp' => $timestamp,
-                'user'      => [
-                    'display_name' => $user->display_name,
-                    'user_login'   => $user->user_login,
-                    'ip'           => $ip,
-                ],
-                'rel_attributes' => [
-                    'noopener'   => get_option('sog_add_rel_noopener') === '1',
-                    'noreferrer' => get_option('sog_add_rel_noreferrer') === '1',
-                ]
-            ];
-            file_put_contents($log_path, json_encode($log_entry, JSON_UNESCAPED_SLASHES) . "\n", FILE_APPEND | LOCK_EX);
 
             // Process whitelist exceptions
             if (isset($_POST['sog_exceptions'])) {
