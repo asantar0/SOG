@@ -58,7 +58,7 @@ document.addEventListener("DOMContentLoaded", function () {
         const sogCancel = document.getElementById("sog-cancel");
         const sogContinue = document.getElementById("sog-continue");
 
-        // Personalized colors
+        // Apply custom colors
         if (sog_custom.continue_color) {
             sogContinue.style.backgroundColor = sog_custom.continue_color;
             sogContinue.style.color = "#fff";
@@ -149,7 +149,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 tempLink.href = urlToOpen;
                 tempLink.target = "_blank";
 
-                let relValues = [];
+                const relValues = [];
                 if (sog_settings.rel_noopener === '1') relValues.push("noopener");
                 if (sog_settings.rel_noreferrer === '1') relValues.push("noreferrer");
 

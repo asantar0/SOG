@@ -56,9 +56,7 @@
 
         <h2>URL Whitelist</h2>
         <p>Enter one URL per line. Example: <code>example.com</code> or <code>https://site.com/path</code></p>
-        <textarea name="sog_exceptions" rows="10" cols="80" class="large-text code"><?php
-            echo esc_textarea(implode("\n", is_array($current_exceptions) ? $current_exceptions : []));
-        ?></textarea>
+        <textarea name="sog_exceptions" rows="10" cols="80" class="large-text code"><?php echo esc_textarea(implode("\n", is_array($current_exceptions) ? $current_exceptions : [])); ?></textarea>
 
         <hr>
 
@@ -82,10 +80,10 @@
 	<hr>
 	<h2>Email Notification</h2>
 	<p>
-    	    <label>
-                <input type="checkbox" name="sog_email_enabled" value="1" <?php checked(get_option('sog_email_enabled', '1'), '1'); ?> />
-        	Enable email notification when settings change
-    	    </label>
+		<label>
+			<input type="checkbox" name="sog_email_enabled" value="1" <?php checked(get_option('sog_email_enabled', '1'), '1'); ?> />
+			Enable email notification when settings change
+		</label>
 	</p>
 	<br>
         <p>

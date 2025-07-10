@@ -168,22 +168,19 @@ function sog_settings_page() {
     $upload_dir = wp_upload_dir();
     $exceptions_path = trailingslashit($upload_dir['basedir']) . 'sog/exceptions.json';
     $log_path = trailingslashit($upload_dir['basedir']) . 'sog/audit.log';
-
     $current_token = get_option('sog_ipinfo_token', '');
 
     // Handle form submissions
-    if (
-        isset($_POST['sog_token']) ||
-        isset($_POST['sog_exceptions']) ||
-        isset($_POST['sog_clear_log'])
-    ) {
+    if (isset($_POST['sog_token']) || isset($_POST['sog_exceptions']) || isset($_POST['sog_clear_log'])) {
+        // Initialize common variables
+        $user = wp_get_current_user();
+        $ip = $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
+        $timestamp = current_time('mysql');
+        $admin_email = get_option('admin_email');
+        $headers = ['Content-Type: text/html; charset=UTF-8'];
+        
         // Clear audit log
         if (isset($_POST['sog_clear_log']) && check_admin_referer('sog_clear_log')) {
-            $user = wp_get_current_user();
-            $ip = $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
-            $timestamp = current_time('mysql');
-            $admin_email = get_option('admin_email');
-            $headers = ['Content-Type: text/html; charset=UTF-8'];
             
             if (file_exists($log_path)) {
                 if (is_writable($log_path)) {
@@ -209,10 +206,7 @@ function sog_settings_page() {
         }
 
         // Save settings (token, whitelist, rel options, modal appearance)
-        if (
-            (isset($_POST['sog_token']) || isset($_POST['sog_exceptions'])) &&
-            check_admin_referer('sog_save_exceptions')
-        ) {
+        if ((isset($_POST['sog_token']) || isset($_POST['sog_exceptions'])) && check_admin_referer('sog_save_exceptions')) {
             // Save IPInfo token
             if (isset($_POST['sog_token'])) {
                 $sanitized_token = sanitize_text_field($_POST['sog_token']);
@@ -248,11 +242,6 @@ function sog_settings_page() {
 
 	    if ($old_noopener !== $new_noopener || $old_noreferrer !== $new_noreferrer) {
     		echo '<div class="notice notice-success is-dismissible"><p>Options for <code>rel="noopener"</code> and <code>rel="noreferrer"</code> were saved successfully.</p></div>';
-
-    		$user = wp_get_current_user();
-    		$ip = $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
-    		$timestamp = current_time('mysql');
-    		$log_path = trailingslashit(wp_upload_dir()['basedir']) . 'sog/audit.log';
 
     		$log_data = [
         	    'type'       => 'rel_attribute_update',
@@ -293,10 +282,10 @@ function sog_settings_page() {
 
             echo '<div class="notice notice-success is-dismissible"><p>Modal appearance settings saved successfully.</p></div>';
 
-            // Send mail when changes were detected.
-            $was_email_enabled       = get_option('sog_email_enabled', '0');
-            $new_email_enabled       = isset($_POST['sog_email_enabled']) ? '1' : '0';
-            $email_enabled_just_now  = ($was_email_enabled === '0' && $new_email_enabled === '1');
+            // Handle email notifications
+            $was_email_enabled = get_option('sog_email_enabled', '0');
+            $new_email_enabled = isset($_POST['sog_email_enabled']) ? '1' : '0';
+            $email_enabled_just_now = ($was_email_enabled === '0' && $new_email_enabled === '1');
             $email_disabled_just_now = ($was_email_enabled === '1' && $new_email_enabled === '0');
 
             update_option('sog_email_enabled', $new_email_enabled);
@@ -318,12 +307,7 @@ function sog_settings_page() {
             }
 
 
-            $admin_email = get_option('admin_email');
-            $user        = wp_get_current_user();
-            $ip          = $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
-            $timestamp   = current_time('mysql');
-            $headers     = ['Content-Type: text/html; charset=UTF-8'];
-            $sent        = false;
+            $sent = false;
 
             if ($email_enabled_just_now) {
                 $subject = 'SOG Plugin - Email notifications enabled';
@@ -341,7 +325,7 @@ function sog_settings_page() {
                 $body .= "<strong>IP:</strong> $ip</p>";
                 $sent = wp_mail($admin_email, $subject, $body, $headers);
 
-            } elseif (get_option('sog_email_enabled', '1') === '1') {
+            } elseif ($new_email_enabled === '1') {
                 $subject = 'SOG Plugin - Configuration changed';
                 $body  = "<p>A change has been made to the Secure Outbound Gateway plugin configuration.</p>";
                 $body .= "<p><strong>Date:</strong> $timestamp<br>";
@@ -379,7 +363,7 @@ function sog_settings_page() {
                 $sent = wp_mail($admin_email, $subject, $body, $headers);
             }
 
-	    //Write log about mail sent in audit.log
+	    // Log email notifications
 	    if ($was_email_enabled === '1' || $email_enabled_just_now || $email_disabled_just_now) {
     		$email_log_entry = [
         	    'type'      => 'email_notification',
@@ -490,16 +474,12 @@ function sog_settings_page() {
         }
     }
 
-    // Ensure exceptions is always an array before loading the settings page template
+    // Ensure exceptions is always an array
     if (!is_array($current_exceptions)) {
         $current_exceptions = [];
     }
 
-    // Show admin messages (success/error)
     settings_errors();
-
-
-    // Include admin settings page template
     include plugin_dir_path(__FILE__) . 'inc/settings-page.php';
 }
 
@@ -544,17 +524,11 @@ function sog_on_deactivation() {
 
 
 /**
- * Enqueue dismissible notice script in admin.
- */
-add_action('admin_enqueue_scripts', function() {
-    wp_enqueue_script('wp-dismiss-notice');
-});
-
-
-/**
- * Enqueue admin CSS only on plugin settings page.
+ * Enqueue admin scripts and styles.
  */
 add_action('admin_enqueue_scripts', function($hook) {
+    wp_enqueue_script('wp-dismiss-notice');
+    
     if ($hook === 'settings_page_sog') {
         wp_enqueue_style(
             'sog-admin-style',
