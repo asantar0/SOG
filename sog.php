@@ -145,6 +145,9 @@ function sog_load_textdomain() {
     load_plugin_textdomain('sog', false, dirname(plugin_basename(__FILE__)) . '/languages/');
 }
 
+// Include email templates file
+include plugin_dir_path(__FILE__) . 'inc/email-templates.php';
+
 
 /**
  * Add admin menu page for plugin settings.
@@ -207,9 +210,34 @@ function sog_settings_page() {
 
         // Save settings (token, whitelist, rel options, modal appearance)
         if ((isset($_POST['sog_token']) || isset($_POST['sog_exceptions'])) && check_admin_referer('sog_save_exceptions')) {
+            // Track what changed
+            $changes = [];
+            
             // Save IPInfo token
             if (isset($_POST['sog_token'])) {
+                $old_token = get_option('sog_ipinfo_token', '');
                 $sanitized_token = sanitize_text_field($_POST['sog_token']);
+                
+                if ($old_token !== $sanitized_token) {
+                    $changes['token'] = $sanitized_token;
+                    
+                    // Log token change
+                    $log_entry = [
+                        'type'      => 'token_update',
+                        'timestamp' => $timestamp,
+                        'user'      => [
+                            'display_name' => $user->display_name,
+                            'user_login'   => $user->user_login,
+                            'ip'           => $ip,
+                        ],
+                        'token' => [
+                            'old' => $old_token ? '***' . substr($old_token, -4) : 'none',
+                            'new' => $sanitized_token ? '***' . substr($sanitized_token, -4) : 'none'
+                        ]
+                    ];
+                    file_put_contents($log_path, json_encode($log_entry, JSON_UNESCAPED_SLASHES) . "\n", FILE_APPEND | LOCK_EX);
+                }
+                
                 update_option('sog_ipinfo_token', $sanitized_token);
 
                 // Save token to file in uploads/sog/
@@ -222,7 +250,6 @@ function sog_settings_page() {
 
                 if (file_put_contents($token_file, $sanitized_token) !== false) {
                     chmod($token_file, 0600);
-                    echo '<div class="notice notice-success is-dismissible"><p>IPInfo token saved successfully.</p></div>';
                     $success = true;
                 } else {
                     echo '<div class="notice notice-error is-dismissible"><p>Error: Could not write IPInfo token file. Check file permissions in <code>' . esc_html(dirname($token_file)) . '</code>.</p></div>';
@@ -241,7 +268,25 @@ function sog_settings_page() {
 	    $new_noreferrer = isset($_POST['sog_add_rel_noreferrer']) ? '1' : '0';
 
 	    if ($old_noopener !== $new_noopener || $old_noreferrer !== $new_noreferrer) {
-    		echo '<div class="notice notice-success is-dismissible"><p>Options for <code>rel="noopener"</code> and <code>rel="noreferrer"</code> were saved successfully.</p></div>';
+    		// Determine which attributes changed
+    		$changed_attributes = [];
+    		$changed_names = [];
+    		
+    		if ($old_noopener !== $new_noopener) {
+    		    $changed_attributes['noopener'] = $new_noopener === '1';
+    		    $changed_names[] = 'noopener';
+    		}
+    		if ($old_noreferrer !== $new_noreferrer) {
+    		    $changed_attributes['noreferrer'] = $new_noreferrer === '1';
+    		    $changed_names[] = 'noreferrer';
+    		}
+    		
+    		// Add to changes array for email notification
+    		$changes['rel_attributes'] = $changed_attributes;
+    		
+    		// Show specific message for changed attributes
+    		$attribute_list = implode('</code> and <code>rel="', $changed_names);
+    		echo '<div class="notice notice-success is-dismissible"><p>Options for <code>rel="' . $attribute_list . '</code> were saved successfully.</p></div>';
 
     		$log_data = [
         	    'type'       => 'rel_attribute_update',
@@ -251,10 +296,7 @@ function sog_settings_page() {
             		'user_login'   => $user->user_login,
             		'ip'           => $ip
         	    ],
-        	    'rel_attributes' => [
-            	    	'noopener'   => $new_noopener === '1',
-            	    	'noreferrer' => $new_noreferrer === '1'
-        	    ]
+        	    'rel_attributes' => $changed_attributes
     		];
 
     	        file_put_contents($log_path, json_encode($log_data, JSON_UNESCAPED_SLASHES) . "\n", FILE_APPEND);
@@ -263,24 +305,83 @@ function sog_settings_page() {
 	    update_option('sog_add_rel_noopener', $new_noopener);
 	    update_option('sog_add_rel_noreferrer', $new_noreferrer);
 
-            // Save modal title
+            // Save modal appearance settings
             if (isset($_POST['sog_modal_title'])) {
+                $old_title = get_option('sog_modal_title', 'Warning notice');
                 $title = sanitize_text_field($_POST['sog_modal_title']);
+                if ($old_title !== $title) {
+                    $changes['modal_title'] = $title;
+                    
+                    // Log modal title change
+                    $log_entry = [
+                        'type'      => 'modal_title_update',
+                        'timestamp' => $timestamp,
+                        'user'      => [
+                            'display_name' => $user->display_name,
+                            'user_login'   => $user->user_login,
+                            'ip'           => $ip,
+                        ],
+                        'modal_title' => [
+                            'old' => $old_title,
+                            'new' => $title
+                        ]
+                    ];
+                    file_put_contents($log_path, json_encode($log_entry, JSON_UNESCAPED_SLASHES) . "\n", FILE_APPEND | LOCK_EX);
+                }
                 update_option('sog_modal_title', $title);
             }
 
-            // Save button colors
             if (isset($_POST['sog_continue_color'])) {
+                $old_continue_color = get_option('sog_continue_color', '#28a745');
                 $continue_color = sanitize_hex_color($_POST['sog_continue_color']);
+                if ($old_continue_color !== $continue_color) {
+                    $changes['continue_color'] = $continue_color;
+                    
+                    // Log continue color change
+                    $log_entry = [
+                        'type'      => 'modal_color_update',
+                        'timestamp' => $timestamp,
+                        'user'      => [
+                            'display_name' => $user->display_name,
+                            'user_login'   => $user->user_login,
+                            'ip'           => $ip,
+                        ],
+                        'continue_color' => [
+                            'old' => $old_continue_color,
+                            'new' => $continue_color
+                        ]
+                    ];
+                    file_put_contents($log_path, json_encode($log_entry, JSON_UNESCAPED_SLASHES) . "\n", FILE_APPEND | LOCK_EX);
+                }
                 update_option('sog_continue_color', $continue_color);
             }
 
             if (isset($_POST['sog_cancel_color'])) {
+                $old_cancel_color = get_option('sog_cancel_color', '#dc3545');
                 $cancel_color = sanitize_hex_color($_POST['sog_cancel_color']);
+                if ($old_cancel_color !== $cancel_color) {
+                    $changes['cancel_color'] = $cancel_color;
+                    
+                    // Log cancel color change
+                    $log_entry = [
+                        'type'      => 'modal_color_update',
+                        'timestamp' => $timestamp,
+                        'user'      => [
+                            'display_name' => $user->display_name,
+                            'user_login'   => $user->user_login,
+                            'ip'           => $ip,
+                        ],
+                        'cancel_color' => [
+                            'old' => $old_cancel_color,
+                            'new' => $cancel_color
+                        ]
+                    ];
+                    file_put_contents($log_path, json_encode($log_entry, JSON_UNESCAPED_SLASHES) . "\n", FILE_APPEND | LOCK_EX);
+                }
                 update_option('sog_cancel_color', $cancel_color);
             }
 
-            echo '<div class="notice notice-success is-dismissible"><p>Modal appearance settings saved successfully.</p></div>';
+
 
             // Handle email notifications
             $was_email_enabled = get_option('sog_email_enabled', '0');
@@ -307,78 +408,7 @@ function sog_settings_page() {
             }
 
 
-            $sent = false;
 
-            if ($email_enabled_just_now) {
-                $subject = 'SOG Plugin - Email notifications enabled';
-                $body  = "<p>The email notifications for the SOG plugin have been <strong>enabled</strong>.</p>";
-                $body .= "<p><strong>Date:</strong> $timestamp<br>";
-                $body .= "<strong>User:</strong> {$user->display_name} ({$user->user_login})<br>";
-                $body .= "<strong>IP:</strong> $ip</p>";
-                $sent = wp_mail($admin_email, $subject, $body, $headers);
-
-            } elseif ($email_disabled_just_now) {
-                $subject = 'SOG Plugin - Email notifications disabled';
-                $body  = "<p>The email notifications for the SOG plugin have been <strong>disabled</strong>.</p>";
-                $body .= "<p><strong>Date:</strong> $timestamp<br>";
-                $body .= "<strong>User:</strong> {$user->display_name} ({$user->user_login})<br>";
-                $body .= "<strong>IP:</strong> $ip</p>";
-                $sent = wp_mail($admin_email, $subject, $body, $headers);
-
-            } elseif ($new_email_enabled === '1') {
-                $subject = 'SOG Plugin - Configuration changed';
-                $body  = "<p>A change has been made to the Secure Outbound Gateway plugin configuration.</p>";
-                $body .= "<p><strong>Date:</strong> $timestamp<br>";
-                $body .= "<strong>User:</strong> {$user->display_name} ({$user->user_login})<br>";
-                $body .= "<strong>IP:</strong> $ip</p>";
-                $body .= "<p><strong>Changes detected:</strong><ul>";
-
-                if (isset($_POST['sog_token'])) {
-                    $body .= "<li><strong>Token IPInfo:</strong> " . esc_html(sanitize_text_field($_POST['sog_token'])) . "</li>";
-                }
-                if (isset($_POST['sog_modal_title'])) {
-                    $body .= "<li><strong>Modal title:</strong> " . esc_html(sanitize_text_field($_POST['sog_modal_title'])) . "</li>";
-                }
-                if (isset($_POST['sog_continue_color'])) {
-                    $body .= "<li><strong>Continue button color:</strong> " . esc_html(sanitize_hex_color($_POST['sog_continue_color'])) . "</li>";
-                }
-                if (isset($_POST['sog_cancel_color'])) {
-                    $body .= "<li><strong>Cancel button color:</strong> " . esc_html(sanitize_hex_color($_POST['sog_cancel_color'])) . "</li>";
-                }
-                if (isset($_POST['sog_add_rel_noopener']) || isset($_POST['sog_add_rel_noreferrer'])) {
-                    $body .= "<li><strong>rel=\"noopener\"</strong>: " . (isset($_POST['sog_add_rel_noopener']) ? 'Yes' : 'No') . "</li>";
-                    $body .= "<li><strong>rel=\"noreferrer\"</strong>: " . (isset($_POST['sog_add_rel_noreferrer']) ? 'Yes' : 'No') . "</li>";
-                }
-                if (isset($_POST['sog_exceptions'])) {
-                    $raw   = sanitize_textarea_field($_POST['sog_exceptions']);
-                    $lines = array_filter(array_map('trim', explode("\n", $raw)));
-                    $body .= "<li><strong>Whitelist updated:</strong><ul>";
-                    foreach ($lines as $line) {
-                        $body .= "<li>" . esc_html($line) . "</li>";
-                    }
-                    $body .= "</ul></li>";
-                }
-
-                $body .= "</ul></p>";
-                $sent = wp_mail($admin_email, $subject, $body, $headers);
-            }
-
-	    // Log email notifications
-	    if ($was_email_enabled === '1' || $email_enabled_just_now || $email_disabled_just_now) {
-    		$email_log_entry = [
-        	    'type'      => 'email_notification',
-           	    'timestamp' => $timestamp,
-        	    'status'    => $sent ? 'sent' : 'not_sent',
-        	    'subject'   => $subject ?? '(none)',
-        	    'user'      => [
-            		'display_name' => $user->display_name,
-            		'user_login'   => $user->user_login,
-            		'ip'           => $ip,
-        	     ],
-    	   ];
-
-    	   file_put_contents($log_path, json_encode($email_log_entry, JSON_UNESCAPED_SLASHES) . PHP_EOL, FILE_APPEND | LOCK_EX);
-	   }
 
             // Process whitelist exceptions
             if (isset($_POST['sog_exceptions'])) {
@@ -425,6 +455,9 @@ function sog_settings_page() {
                     }
 
                     if ($exceptions !== $old_exceptions) {
+                        // Track whitelist changes
+                        $changes['whitelist'] = $exceptions;
+                        
                         // Save new exceptions to JSON file
                         if (!file_exists(dirname($exceptions_path))) {
                             wp_mkdir_p(dirname($exceptions_path));
@@ -447,14 +480,85 @@ function sog_settings_page() {
                         ];
                         file_put_contents($log_path, json_encode($log_entry, JSON_UNESCAPED_SLASHES) . "\n", FILE_APPEND | LOCK_EX);
 
-                        echo '<div class="notice notice-success is-dismissible"><p>Whitelist updated successfully.</p></div>';
-
                         $current_exceptions = $exceptions;
 
                     } else {
-                        echo '<div class="notice notice-info is-dismissible"><p>No changes detected in whitelist.</p></div>';
                         $current_exceptions = $exceptions;
                     }
+                }
+            }
+            
+            // Send email notifications after all processing is complete
+            $sent = false;
+            $subject = '';
+
+            if ($email_enabled_just_now) {
+                $subject = 'SOG Plugin - Email notifications enabled';
+                $body = sog_get_email_template('email_enabled', [
+                    'timestamp' => $timestamp,
+                    'user_name' => $user->display_name,
+                    'user_login' => $user->user_login,
+                    'ip' => $ip
+                ]);
+                $sent = wp_mail($admin_email, $subject, $body, $headers);
+
+            } elseif ($email_disabled_just_now) {
+                $subject = 'SOG Plugin - Email notifications disabled';
+                $body = sog_get_email_template('email_disabled', [
+                    'timestamp' => $timestamp,
+                    'user_name' => $user->display_name,
+                    'user_login' => $user->user_login,
+                    'ip' => $ip
+                ]);
+                $sent = wp_mail($admin_email, $subject, $body, $headers);
+
+            } elseif ($new_email_enabled === '1' && !empty($changes)) {
+                $subject = 'SOG Plugin - Configuration changed';
+                $body = sog_get_email_template('configuration_changed', [
+                    'timestamp' => $timestamp,
+                    'user_name' => $user->display_name,
+                    'user_login' => $user->user_login,
+                    'ip' => $ip,
+                    'changes' => $changes
+                ]);
+                $sent = wp_mail($admin_email, $subject, $body, $headers);
+            }
+
+            // Log email notifications
+            if ($was_email_enabled === '1' || $email_enabled_just_now || $email_disabled_just_now) {
+                $email_log_entry = [
+                    'type'      => 'email_notification',
+                    'timestamp' => $timestamp,
+                    'status'    => $sent ? 'sent' : 'not_sent',
+                    'subject'   => $subject ?? '(none)',
+                    'user'      => [
+                        'display_name' => $user->display_name,
+                        'user_login'   => $user->user_login,
+                        'ip'           => $ip,
+                    ],
+                ];
+
+                file_put_contents($log_path, json_encode($email_log_entry, JSON_UNESCAPED_SLASHES) . PHP_EOL, FILE_APPEND | LOCK_EX);
+            }
+            
+            // Show summary of all changes
+            if (!empty($changes)) {
+                $change_messages = [];
+                
+                if (isset($changes['token'])) $change_messages[] = 'IPInfo token';
+                if (isset($changes['modal_title'])) $change_messages[] = 'modal title';
+                if (isset($changes['continue_color'])) $change_messages[] = 'continue button color';
+                if (isset($changes['cancel_color'])) $change_messages[] = 'cancel button color';
+                if (isset($changes['whitelist'])) $change_messages[] = 'whitelist (' . count($changes['whitelist']) . ' entries)';
+                if (isset($changes['rel_attributes'])) {
+                    foreach ($changes['rel_attributes'] as $attr => $enabled) {
+                        $change_messages[] = 'rel="' . $attr . '" (' . ($enabled ? 'enabled' : 'disabled') . ')';
+                    }
+                }
+                
+                if (!empty($change_messages)) {
+                    $change_list = implode(', ', $change_messages);
+                    echo '<div class="notice notice-success is-dismissible"><p>Settings updated successfully: ' . esc_html($change_list) . '.</p></div>';
                 }
             }
         }
@@ -522,6 +626,14 @@ function sog_on_deactivation() {
     }
 }
 
+
+/**
+ * Generate professional HTML email templates.
+ * This function now delegates to the email templates file.
+ */
+function sog_get_email_template($type, $data) {
+    return sog_get_email_template_from_file($type, $data);
+}
 
 /**
  * Enqueue admin scripts and styles.
